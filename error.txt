@@ -1,0 +1,223 @@
+
+Showing All Errors Only
+
+Build target swae of project swae with configuration Debug
+
+Ld /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/swae.app/swae.debug.dylib normal (in target 'swae' from project 'swae')
+    cd /Users/suhailsaqan/Documents/GitHub/swaedev
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0 -dynamiclib -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -O0 -L/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphoneos -L/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphoneos -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -F/Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos -filelist /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/swae.build/Debug-iphoneos/swae.build/Objects-normal/arm64/swae.LinkFileList -install_name @rpath/swae.debug.dylib -Xlinker -rpath -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks -Xlinker -rpath -Xlinker @executable_path/Frameworks -dead_strip -Xlinker -object_path_lto -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/swae.build/Debug-iphoneos/swae.build/Objects-normal/arm64/swae_lto.o -rdynamic -Xlinker -no_deduplicate -Xlinker -dependency_info -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/swae.build/Debug-iphoneos/swae.build/Objects-normal/arm64/swae_dependency_info.dat -fobjc-link-runtime -L/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/swae.build/Debug-iphoneos/swae.build/Objects-normal/arm64/swae.swiftmodule -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -lc++ -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Wl,-no_warn_duplicate_libraries -Xlinker -alias -Xlinker _main -Xlinker ___debug_main_executable_dylib_entry_point -lsrt /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks/SwiftProtobufPluginLibrary.framework/SwiftProtobufPluginLibrary /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks/SwiftProtobuf.framework/SwiftProtobuf /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks/AppleGPUInfo.framework/AppleGPUInfo /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/PackageFrameworks/DeviceKit_37CC8ACFBB5FC481_PackageProduct.framework/DeviceKit_37CC8ACFBB5FC481_PackageProduct -Xlinker -no_adhoc_codesign -o /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/swae.app/swae.debug.dylib -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/Kingfisher.build/Debug-iphoneos/Kingfisher.build/Objects-normal/arm64/Kingfisher.swiftmodule -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/VRMKit.build/Debug-iphoneos/VRMSceneKit.build/Objects-normal/arm64/VRMSceneKit.swiftmodule -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/VRMKit.build/Debug-iphoneos/VRMKit.build/Objects-normal/arm64/VRMKit.swiftmodule -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/AlertToast.build/Debug-iphoneos/AlertToast.build/Objects-normal/arm64/AlertToast.swiftmodule -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/swift-collections.build/Debug-iphoneos/Collections.build/Objects-normal/arm64/Collections.swiftmodule -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/swift-collections.build/Debug-iphoneos/InternalCollectionsUtilities.build/Objects-normal/arm64/InternalCollectionsUtilities.swiftmodule -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/swift-collections.build/Debug-iphoneos/BitCollections.build/Objects-normal/arm64/BitCollections.swiftmodule -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/swift-collections.build/Debug-iphoneos/DequeModule.build/Objects-normal/arm64/DequeModule.swiftmodule -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/swift-collections.build/Debug-iphoneos/HashTreeCollections.build/Objects-normal/arm64/HashTreeCollections.swiftmodule -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/swift-collections.build/Debug-iphoneos/HeapModule.build/Objects-normal/arm64/HeapModule.swiftmodule -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/swift-collections.build/Debug-iphoneos/OrderedCollections.build/Objects-normal/arm64/OrderedCollections.swiftmodule -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/swift-collections.build/Debug-iphoneos/_RopeModule.build/Objects-normal/arm64/_RopeModule.swiftmodule -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/NostrSDK.build/Debug-iphoneos/NostrSDK.build/Objects-normal/arm64/NostrSDK.swiftmodule -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/secp256k1.build/Debug-iphoneos/secp256k1.build/Objects-normal/arm64/secp256k1.swiftmodule -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/CryptoSwift.build/Debug-iphoneos/CryptoSwift.build/Objects-normal/arm64/CryptoSwift.swiftmodule -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/WrappingHStack.build/Debug-iphoneos/WrappingHStack.build/Objects-normal/arm64/WrappingHStack.swiftmodule -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/BlackSharkLib.build/Debug-iphoneos/BlackSharkLib.build/Objects-normal/arm64/BlackSharkLib.swiftmodule -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/SDWebImageSwiftUI.build/Debug-iphoneos/SDWebImageSwiftUI.build/Objects-normal/arm64/SDWebImageSwiftUI.swiftmodule -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/Logboard.build/Debug-iphoneos/Logboard.build/Objects-normal/arm64/Logboard.swiftmodule -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/SwiftTrie.build/Debug-iphoneos/SwiftTrie.build/Objects-normal/arm64/SwiftTrie.swiftmodule -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/CrcSwift.build/Debug-iphoneos/CrcSwift.build/Objects-normal/arm64/CrcSwift.swiftmodule -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/TrueTime.build/Debug-iphoneos/TrueTime.build/Objects-normal/arm64/TrueTime.swiftmodule -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/MetalPetal.build/Debug-iphoneos/MetalPetal.build/Objects-normal/arm64/MetalPetal.swiftmodule -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/secp256k1.build/Debug-iphoneos/zkp.build/Objects-normal/arm64/zkp.swiftmodule -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/SwiftCube.build/Debug-iphoneos/SwiftCube.build/Objects-normal/arm64/SwiftCube.swiftmodule -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/XMLCoder.build/Debug-iphoneos/XMLCoder.build/Objects-normal/arm64/XMLCoder.swiftmodule -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/CodeScanner.build/Debug-iphoneos/CodeScanner.build/Objects-normal/arm64/CodeScanner.swiftmodule -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/Rist.build/Debug-iphoneos/Rist.build/Objects-normal/arm64/Rist.swiftmodule -Xlinker -add_ast_path -Xlinker /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Intermediates.noindex/NWWebSocket.build/Debug-iphoneos/NWWebSocket.build/Objects-normal/arm64/NWWebSocket.swiftmodule
+
+duplicate symbol '_secp256k1_schnorrsig_sign32' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ec_pubkey_serialize' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_context_set_error_callback' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_xonly_pubkey_parse' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_nonce_function_default' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_schnorrsig_verify' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ec_pubkey_create' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ecdsa_recoverable_signature_serialize_compact' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_scratch_space_destroy' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ecdsa_signature_serialize_der' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_context_preallocated_create' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ec_pubkey_combine' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_pre_g' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ecdsa_signature_parse_der' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_keypair_xonly_tweak_add' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_context_preallocated_destroy' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_context_randomize' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ecmult_gen_prec_table' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_tagged_sha256' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ecdsa_signature_serialize_compact' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ec_privkey_tweak_add' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_xonly_pubkey_tweak_add' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_keypair_create' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ec_pubkey_negate' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ecdh_hash_function_sha256' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_context_preallocated_clone' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ecdsa_recoverable_signature_parse_compact' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_swift_memczero' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ec_seckey_tweak_add' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_context_no_precomp' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_schnorrsig_sign_custom' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_keypair_sec' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ecdsa_sign_recoverable' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_context_preallocated_clone_size' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_context_preallocated_size' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_context_destroy' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_nonce_function_bip340' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ecdsa_verify' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ec_seckey_negate' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_context_create' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ec_seckey_verify' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_xonly_pubkey_from_pubkey' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ec_pubkey_tweak_add' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_swift_sha256' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ecdsa_recover' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_context_set_illegal_callback' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ec_seckey_tweak_mul' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_keypair_xonly_pub' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_pre_g_128' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_xonly_pubkey_cmp' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ec_pubkey_tweak_mul' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ec_pubkey_parse' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ec_pubkey_cmp' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_scratch_space_create' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_schnorrsig_sign' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ecdsa_sign' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ecdsa_signature_normalize' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ecdh_hash_function_default' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_nonce_function_rfc6979' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ec_privkey_negate' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_context_clone' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ecdsa_recoverable_signature_convert' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ecdh' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ecdsa_signature_parse_compact' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_xonly_pubkey_tweak_add_check' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_keypair_pub' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_ec_privkey_tweak_mul' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+duplicate symbol '_secp256k1_xonly_pubkey_serialize' in:
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/secp256k1_bindings.o
+    /Users/suhailsaqan/Library/Developer/Xcode/DerivedData/swae-cgbrywcbamjzapaxcjwnauedcsrn/Build/Products/Debug-iphoneos/zkp_bindings.o
+ld: 68 duplicate symbols
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+
+68 duplicate symbols
+
+Linker command failed with exit code 1 (use -v to see invocation)
+
+
+
+Build failed    8/22/25, 7:12 PM    100.6 seconds
