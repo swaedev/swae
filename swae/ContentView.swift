@@ -91,6 +91,10 @@ struct ContentView: View {
                 toast: model.toast,
                 orientation: model.orientation,
                 onExitStream: {
+                    // Turn off camera when exiting if not currently streaming
+                    if !model.isLive && !model.streaming {
+                        model.detachCamera()
+                    }
                     showMainView = false
                 }
             )
