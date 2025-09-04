@@ -307,6 +307,23 @@ struct VideoListView: View, MetadataCoding {
                         let size = proxy.size
 
                         KFImage.url(item.image)
+                            .placeholder {
+                                // Placeholder image when no image is available
+                                ZStack {
+                                    Rectangle()
+                                        .fill(Color.gray.opacity(0.3))
+
+                                    VStack(spacing: 8) {
+                                        Image(systemName: "video.slash")
+                                            .font(.system(size: 40))
+                                            .foregroundColor(.gray)
+
+                                        Text("No Preview")
+                                            .font(.caption)
+                                            .foregroundColor(.gray)
+                                    }
+                                }
+                            }
                             .resizable()
                             .aspectRatio(contentMode: .fill)
                             .frame(
