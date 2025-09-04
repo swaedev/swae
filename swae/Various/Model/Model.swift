@@ -2422,10 +2422,13 @@ final class Model: NSObject, ObservableObject, @unchecked Sendable {
     }
 
     func detachCamera() {
+        guard let cameraPreviewLayer = cameraPreviewLayer else {
+            return
+        }
         let params = VideoUnitAttachParams(
             devices: CaptureDevices(hasSceneDevice: false, devices: []),
             builtinDelay: 0,
-            cameraPreviewLayer: cameraPreviewLayer!,
+            cameraPreviewLayer: cameraPreviewLayer,
             showCameraPreview: false,
             externalDisplayPreview: false,
             bufferedVideo: nil,
@@ -2607,12 +2610,15 @@ final class Model: NSObject, ObservableObject, @unchecked Sendable {
     }
 
     private func attachCameraFinalize(scene: SettingsScene) {
+        guard let cameraPreviewLayer = cameraPreviewLayer else {
+            return
+        }
         lastAttachCompletedTime = nil
         let isMirrored = getVideoMirroredOnScreen()
         let params = VideoUnitAttachParams(
             devices: getBuiltinCameraDevices(scene: scene, sceneDevice: cameraDevice),
             builtinDelay: database.debug.builtinAudioAndVideoDelay,
-            cameraPreviewLayer: cameraPreviewLayer!,
+            cameraPreviewLayer: cameraPreviewLayer,
             showCameraPreview: updateShowCameraPreview(),
             externalDisplayPreview: externalDisplayPreview,
             bufferedVideo: nil,
@@ -2657,6 +2663,9 @@ final class Model: NSObject, ObservableObject, @unchecked Sendable {
     }
 
     func attachBufferedCamera(cameraId: UUID, scene: SettingsScene) {
+        guard let cameraPreviewLayer = cameraPreviewLayer else {
+            return
+        }
         cameraDevice = nil
         cameraPosition = nil
         streamPreviewView.isMirrored = false
@@ -2665,7 +2674,7 @@ final class Model: NSObject, ObservableObject, @unchecked Sendable {
         media.attachBufferedCamera(
             devices: getBuiltinCameraDevices(scene: scene, sceneDevice: nil),
             builtinDelay: database.debug.builtinAudioAndVideoDelay,
-            cameraPreviewLayer: cameraPreviewLayer!,
+            cameraPreviewLayer: cameraPreviewLayer,
             showCameraPreview: updateShowCameraPreview(),
             externalDisplayPreview: externalDisplayPreview,
             cameraId: cameraId,
