@@ -143,12 +143,11 @@ class AppState: ObservableObject, Hashable, RelayURLValidating, EventCreating {
         pastEvents(followedEvents)
     }
 
-    private func profileEvents(_ publicKeyHex: String) -> [LiveActivitiesEvent] {
+    func profileEvents(_ publicKeyHex: String) -> [LiveActivitiesEvent] {
         let allEvents = liveActivitiesEvents.values.flatMap { $0 }
 
-        // Filter events that have a start time and match the specified pubkey
         return allEvents.filter { event in
-            event.startsAt != nil && event.pubkey == publicKeyHex
+            event.participants.first(where: { $0.role == "host" })?.pubkey?.hex == publicKeyHex
         }
     }
 
@@ -844,11 +843,12 @@ extension AppState: EventVerifying, RelayDelegate {
         guard
             let filter = Filter(
                 kinds: [
-                    EventKind.liveChatMessage.rawValue, /*EventKind.zapRequest.rawValue,*/
+                    EventKind.liveChatMessage.rawValue,
+                    EventKind.zapRequest.rawValue,
                     EventKind.zapReceipt.rawValue,
                 ],
                 tags: ["a": [eventCoordinate]],  // Note the array of arrays
-                since: 0
+                since: nil
             )
         else {
             print("Failed to create live chat filter")
@@ -889,23 +889,39 @@ extension AppState: EventVerifying, RelayDelegate {
                 kinds: [
                     EventKind.metadata.rawValue,
                     EventKind.followList.rawValue,
-                        //                EventKind.liveActivities.rawValue,
+                    EventKind.liveActivities.rawValue,
                         //                    EventKind.deletion.rawValue
-                ]
+                ],
+                since: 0
+            )
+        else {
+            print("Unable to create profile filter.")
+            return
+        }
+        
+        guard
+            let filter1 = Filter(
+                kinds: [
+                    EventKind.metadata.rawValue,
+                    EventKind.followList.rawValue,
+                    EventKind.liveActivities.rawValue,
+                        //                    EventKind.deletion.rawValue
+                ],
+                tags: ["p": [publicKeyHex]],
+                since: 0
             )
         else {
             print("Unable to create profile filter.")
             return
         }
 
-        // Add time constraints to get historical messages
-        //        if let liveEventStart = event.startsAt {
-        //            filter.since = Int(liveEventStart.timeIntervalSince1970)
-        //        }
 
         let subscriptionId = relayReadPool.subscribe(with: filter)
         followListEventSubscriptionCounts[subscriptionId] = publicKeyHex
         print("Subscribed to profile \(publicKeyHex) with ID: \(subscriptionId)")
+//        let subscriptionId1 = relayReadPool.subscribe(with: filter1)
+//        followListEventSubscriptionCounts[subscriptionId1] = publicKeyHex
+//        print("Subscribed to profile \(publicKeyHex) with ID: \(subscriptionId1)")
     }
 
     func unsubscribeFromProfile(for publicKeyHex: String) {

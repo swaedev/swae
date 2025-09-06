@@ -11,42 +11,41 @@ import SwiftData
 import SwiftUI
 
 struct VideoListView: View, MetadataCoding {
-    
+
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var orientationMonitor: OrientationMonitor
-    
+
     @State var eventListType: EventListType
     @State private var timeTabFilter: TimeTabs = .past
     @State private var showAllEvents: Bool = true
     @State private var filteredEvents: [LiveActivitiesEvent] = []
     @ObservedObject private var searchViewModel = SearchViewModel()
-    
+
     // Event selection and detail view state
     @State var selectedEvent: LiveActivitiesEvent?
     @State var showDetailPage: Bool = false
-    
+
     // UI animation states
     @Namespace var animation
     @State var animateView: Bool = false
     @State var animateContent: Bool = false
-    
+
     // Scroll and layout states
     @State private var scrollOffset: CGFloat = 0
     @State private var lastScrollOffset: CGFloat = 0
-    
+
     // Section expansion states
     @State private var isProfilesSectionExpanded: Bool = false
-    
+
     // Pagination states
     @State private var currentPage: Int = 0
     @State private var isLoadingMore: Bool = false
     @State private var hasMoreData: Bool = true
-    
+
     // Topbar
     @State private var selectedIndex: Int = 1
     @State private var hideTopBar: Bool = false
-    
-    
+
     var body: some View {
         customTabView()
             .edgesIgnoringSafeArea([.bottom])
@@ -60,16 +59,17 @@ struct VideoListView: View, MetadataCoding {
                 filteredEvents = events(newValue)
             }
     }
-    
+
     /// Computes the total height of our top bar: safe area inset + content height.
     var topBarHeight: CGFloat {
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let window = windowScene.windows.first {
+            let window = windowScene.windows.first
+        {
             return window.safeAreaInsets.top
         }
         return 0
     }
-    
+
     private func customTabView() -> some View {
         ZStack(alignment: .top) {
             TabView(selection: $selectedIndex) {
@@ -83,14 +83,14 @@ struct VideoListView: View, MetadataCoding {
             }
             .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             .edgesIgnoringSafeArea([.top, .bottom])
-            
+
             TopTabBar(selectedIndex: $selectedIndex)
-                .frame(height: topBarHeight*2)
-                .offset(y: hideTopBar ? -topBarHeight*2 : 0) // Slide the bar up (hidden) by offsetting it by its full height.
+                .frame(height: topBarHeight * 2)
+                .offset(y: hideTopBar ? -topBarHeight * 2 : 0)  // Slide the bar up (hidden) by offsetting it by its full height.
                 .edgesIgnoringSafeArea([.top])
         }
     }
-    
+
     struct TopTabBar: View {
         @Environment(\.colorScheme) var colorScheme
         @Binding var selectedIndex: Int
@@ -110,26 +110,26 @@ struct VideoListView: View, MetadataCoding {
                                 endPoint: .bottom
                             )
                         )
-                    
+
                     VStack {
                         HStack {
                             TabButton(title: "Following", tag: 0, selectedIndex: $selectedIndex)
                             TabButton(title: "For You", tag: 1, selectedIndex: $selectedIndex)
                         }
                         .padding(.horizontal, 30)
-                        
+
                         Indicator(selectedIndex: $selectedIndex)
                             .padding(.horizontal, 30)
                             .padding(.vertical, -10)
-                        
+
                         Spacer()
                     }
-                    .offset(y: geometry.size.height / 2) // Offset so the top edge of the VStack starts at mid-height.
+                    .offset(y: geometry.size.height / 2)  // Offset so the top edge of the VStack starts at mid-height.
                 }
             }
         }
     }
-    
+
     struct TabButton: View {
         let title: String
         let tag: Int
@@ -149,11 +149,11 @@ struct VideoListView: View, MetadataCoding {
             }
         }
     }
-    
+
     /// A sliding capsule indicator that sits under the active tab.
     struct Indicator: View {
         @Binding var selectedIndex: Int
-        
+
         var body: some View {
             GeometryReader { geo in
                 // Each button occupies half of the available width.
@@ -161,41 +161,43 @@ struct VideoListView: View, MetadataCoding {
                 Capsule()
                     .fill(Color.purple)
                     .frame(width: 60, height: 2)
-                // Calculate the horizontal offset for the capsule.
-                    .offset(x: selectedIndex == 0
+                    // Calculate the horizontal offset for the capsule.
+                    .offset(
+                        x: selectedIndex == 0
                             ? (buttonWidth - 60) / 2
-                            : buttonWidth + (buttonWidth - 60) / 2)
+                            : buttonWidth + (buttonWidth - 60) / 2
+                    )
                     .animation(.easeInOut, value: selectedIndex)
             }
         }
     }
-    
-    private func vidListView(/*scrollViewProxy: ScrollViewProxy*/) -> some View {
+
+    private func vidListView( /*scrollViewProxy: ScrollViewProxy*/) -> some View {
         VStack {
-//            CustomSegmentedPicker(selectedTimeTab: $timeTabFilter) {
-//                withAnimation {
-//                    scrollViewProxy.scrollTo("event-list-view-top")
-//                }
-//            }
-//            .padding([.leading, .trailing], 16)
-            
-//            if eventListType == .all && appState.publicKey != nil {
-//                Button(
-//                    action: {
-//                        showAllEvents.toggle()
-//                    },
-//                    label: {
-//                        Image(systemName: "figure.stand.line.dotted.figure.stand")
-//                            .resizable()
-//                            .scaledToFit()
-//                            .frame(width: 30)
-//                            .foregroundStyle(showAllEvents ? .secondary : .primary)
-//                    }
-//                )
-//                .frame(maxWidth: .infinity, alignment: .trailing)
-//                .padding([.leading, .trailing], 16)
-//            }
-            
+            //            CustomSegmentedPicker(selectedTimeTab: $timeTabFilter) {
+            //                withAnimation {
+            //                    scrollViewProxy.scrollTo("event-list-view-top")
+            //                }
+            //            }
+            //            .padding([.leading, .trailing], 16)
+
+            //            if eventListType == .all && appState.publicKey != nil {
+            //                Button(
+            //                    action: {
+            //                        showAllEvents.toggle()
+            //                    },
+            //                    label: {
+            //                        Image(systemName: "figure.stand.line.dotted.figure.stand")
+            //                            .resizable()
+            //                            .scaledToFit()
+            //                            .frame(width: 30)
+            //                            .foregroundStyle(showAllEvents ? .secondary : .primary)
+            //                    }
+            //                )
+            //                .frame(maxWidth: .infinity, alignment: .trailing)
+            //                .padding([.leading, .trailing], 16)
+            //            }
+
             if filteredEvents.isEmpty {
                 VStack {
                     Spacer()
@@ -208,7 +210,7 @@ struct VideoListView: View, MetadataCoding {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 0) {
                         EmptyView().id("event-list-view-top")
-                        
+
                         Color.clear
                             .frame(height: topBarHeight)
                             .background(
@@ -220,13 +222,13 @@ struct VideoListView: View, MetadataCoding {
                                         let delta = newOffset - lastScrollOffset
                                         if delta < -15 {
                                             // Scrolling down: hide the tabbar.
-                                            withAnimation(.linear(duration:0.15)) {
+                                            withAnimation(.linear(duration: 0.15)) {
                                                 notify(.display_tabbar(false))
                                             }
                                             hide_topbar(true)
                                         } else if delta > 15 {
                                             // Scrolling up: show the tabbar.
-                                            withAnimation(.linear(duration:0.15)) {
+                                            withAnimation(.linear(duration: 0.15)) {
                                                 notify(.display_tabbar(true))
                                             }
                                             hide_topbar(false)
@@ -236,37 +238,38 @@ struct VideoListView: View, MetadataCoding {
                                     return Color.clear
                                 }
                             )
-                        
+
                         ForEach(filteredEvents.prefix(currentPage * 10), id: \.self) { event in
                             Button {
-//                                withAnimation(
-//                                    .interactiveSpring(response: 0.6, dampingFraction: 0.7, blendDuration: 0.7)
-//                                ) {
-//                                    selectedEvent = event
-//                                    showDetailPage = true
-//                                    animateView = true
-//                                    notify(.display_tabbar(false))
-//                                }
-//                                withAnimation(
-//                                    .interactiveSpring(response: 0.6,
-//                                                       dampingFraction: 0.7,
-//                                                       blendDuration: 0.7)
-//                                    .delay(0.05)
-//                                ) {
-//                                    animateContent = true
-//                                }
+                                //                                withAnimation(
+                                //                                    .interactiveSpring(response: 0.6, dampingFraction: 0.7, blendDuration: 0.7)
+                                //                                ) {
+                                //                                    selectedEvent = event
+                                //                                    showDetailPage = true
+                                //                                    animateView = true
+                                //                                    notify(.display_tabbar(false))
+                                //                                }
+                                //                                withAnimation(
+                                //                                    .interactiveSpring(response: 0.6,
+                                //                                                       dampingFraction: 0.7,
+                                //                                                       blendDuration: 0.7)
+                                //                                    .delay(0.05)
+                                //                                ) {
+                                //                                    animateContent = true
+                                //                                }
                                 appState.playerConfig.selectedLiveActivitiesEvent = event
                                 withAnimation(.easeInOut(duration: 0.3)) {
                                     appState.playerConfig.showMiniPlayer = true
                                 }
                             } label: {
                                 CardView(item: event)
-                                    .scaleEffect(selectedEvent?.id == event.id && showDetailPage ? 1 : 0.93)
+                                    .scaleEffect(
+                                        selectedEvent?.id == event.id && showDetailPage ? 1 : 0.93)
                             }
                             .buttonStyle(ScaledButtonStyle())
                             .opacity(showDetailPage ? (selectedEvent?.id == event.id ? 1 : 0) : 1)
                         }
-                        
+
                         // Loading indicator view
                         if isLoadingMore {
                             VStack(alignment: .leading) {
@@ -345,13 +348,13 @@ struct VideoListView: View, MetadataCoding {
                         GeometryReader { proxy in
                             let size = proxy.size
                             let safeArea = proxy.safeAreaInsets
-                            
-//                            VideoPlayerView(
-//                                size: size, safeArea: safeArea, url: url,
-//                                onDragDown: closeDetailView,
-//                                onDragUp: fullScreen
-//                            )
-//                            .background(Color.clear)
+
+                            //                            VideoPlayerView(
+                            //                                size: size, safeArea: safeArea, url: url,
+                            //                                onDragDown: closeDetailView,
+                            //                                onDragUp: fullScreen
+                            //                            )
+                            //                            .background(Color.clear)
                         }
                     } else {
                         HStack {}
@@ -359,8 +362,14 @@ struct VideoListView: View, MetadataCoding {
                             .background(Color.clear)
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: orientationMonitor.isLandscape ? .infinity : .infinity)
-                .ignoresSafeArea(.container, edges: orientationMonitor.isLandscape ? [.top, .bottom] : [.leading, .trailing])
+                .frame(
+                    maxWidth: .infinity,
+                    maxHeight: orientationMonitor.isLandscape ? .infinity : .infinity
+                )
+                .ignoresSafeArea(
+                    .container,
+                    edges: orientationMonitor.isLandscape
+                        ? [.top, .bottom] : [.leading, .trailing])
             } else {
                 HStack {}
                     .frame(height: 250)
@@ -369,16 +378,20 @@ struct VideoListView: View, MetadataCoding {
 
             if !orientationMonitor.isLandscape {
                 HStack(spacing: 12) {
-                    if let publicKeyHex = item.participants.first(where: { $0.role == "host" })?.pubkey?.hex {
-                        ProfilePicView(pubkey: publicKeyHex, size: 45, profile: appState.metadataEvents[publicKeyHex]?.userMetadata)
+                    if let publicKeyHex = item.participants.first(where: { $0.role == "host" })?
+                        .pubkey?.hex
+                    {
+                        ProfilePicView(
+                            pubkey: publicKeyHex, size: 45,
+                            profile: appState.metadataEvents[publicKeyHex]?.userMetadata)
                     }
-                    
+
                     VStack(alignment: .leading, spacing: 4) {
                         Text(item.title ?? "no title")
                             .font(.body)
                             .foregroundColor(.gray)
                             .lineLimit(2)
-                        
+
                         Text(item.status != .live ? "ENDED" : "LIVE")
                             .font(.caption)
                             .foregroundColor(.red)
@@ -388,8 +401,8 @@ struct VideoListView: View, MetadataCoding {
                 }.opacity(showDetailPage ? 0 : 1)
             }
         }
-//        .background(Color(UIColor.systemBackground))
-//        .frame(maxHeight: 250)
+        //        .background(Color(UIColor.systemBackground))
+        //        .frame(maxHeight: 250)
         .matchedGeometryEffect(
             id: item.id, in: animation,
             isSource: selectedEvent?.id == item.id && animateView)
@@ -400,8 +413,8 @@ struct VideoListView: View, MetadataCoding {
             VStack {
                 CardView(item: item, isDetailPage: true)
                     .scaleEffect(animateView ? 1 : 0.93)
-                    .zIndex(1) // Keeps it on top
-                
+                    .zIndex(1)  // Keeps it on top
+
                 if !orientationMonitor.isLandscape {
                     LiveChatView(liveActivitiesEvent: item)
                         .offset(y: scrollOffset > 0 ? scrollOffset : 0)
@@ -435,34 +448,36 @@ struct VideoListView: View, MetadataCoding {
             }
             withAnimation(
                 .interactiveSpring(
-                    response: 0.6, dampingFraction: 0.7, blendDuration: 0.7)
+                    response: 0.6, dampingFraction: 0.7, blendDuration: 0.7
+                )
                 .delay(0.05)
             ) {
                 animateContent = true
             }
         }
         .transition(.identity)
-//        .matchedGeometryEffect(id: item.id, in: animation, isSource: false)
+        //        .matchedGeometryEffect(id: item.id, in: animation, isSource: false)
     }
 
     func events(_ timeTabFilter: TimeTabs) -> [LiveActivitiesEvent] {
         if eventListType == .all,
-           let searchText = searchViewModel.debouncedSearchText.trimmedOrNilIfEmpty
+            let searchText = searchViewModel.debouncedSearchText.trimmedOrNilIfEmpty
         {
             // Search by metadata (naddr or nevent)
             if let metadata = try? decodedMetadata(from: searchText),
-               let kind = metadata.kind,
-               let pubkey = metadata.pubkey,
-               let publicKey = PublicKey(hex: pubkey)
+                let kind = metadata.kind,
+                let pubkey = metadata.pubkey,
+                let publicKey = PublicKey(hex: pubkey)
             {
                 if kind == EventKind.liveActivities.rawValue {
                     // Search by naddr
                     if let identifier = metadata.identifier,
-                       let eventCoordinates = try? EventCoordinates(
-                           kind: EventKind(rawValue: Int(kind)),
-                           pubkey: publicKey,
-                           identifier: identifier),
-                       let liveActivitiesEvents = appState.liveActivitiesEvents[eventCoordinates.tag.value]
+                        let eventCoordinates = try? EventCoordinates(
+                            kind: EventKind(rawValue: Int(kind)),
+                            pubkey: publicKey,
+                            identifier: identifier),
+                        let liveActivitiesEvents = appState.liveActivitiesEvents[
+                            eventCoordinates.tag.value]
                     {
                         // Flatten the array and filter based on timeTabFilter
                         let filteredEvents = liveActivitiesEvents.filter { event in
@@ -538,10 +553,10 @@ struct VideoListView: View, MetadataCoding {
     private func loadMoreEvents() async {
         // Prevent overlapping calls
         guard !isLoadingMore else { return }
-        
+
         // Update state on the main actor
         await MainActor.run { isLoadingMore = true }
-        
+
         // Offload heavy work (fetching/filtering events) to a background thread
         let newEvents = await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
@@ -549,7 +564,7 @@ struct VideoListView: View, MetadataCoding {
                 continuation.resume(returning: events)
             }
         }
-        
+
         // Update UI-related state on the main actor
         await MainActor.run {
             if newEvents.count > self.currentPage * 10 {
@@ -577,7 +592,8 @@ struct VideoListView: View, MetadataCoding {
         withAnimation(
             .interactiveSpring(
                 response: 0.6, dampingFraction: 0.7,
-                blendDuration: 0.7)
+                blendDuration: 0.7
+            )
             .delay(0.05)
         ) {
             selectedEvent = nil
@@ -585,60 +601,19 @@ struct VideoListView: View, MetadataCoding {
             notify(.display_tabbar(true))
         }
     }
-    
+
     func fullScreen() {
         let orientationIsLandscape = orientationMonitor.isLandscape
         withAnimation(.easeInOut(duration: 0.2)) {
             orientationMonitor.setOrientation(to: orientationIsLandscape ? .portrait : .landscape)
         }
     }
-    
+
     /// Call this method with `true` to slide the top bar offscreen, or `false` to reveal it.
     func hide_topbar(_ shouldHide: Bool) {
         withAnimation(.easeInOut(duration: 0.15)) {
             hideTopBar = shouldHide
         }
-    }
-}
-
-struct CustomSegmentedPicker: View {
-    @Binding var selectedTimeTab: TimeTabs
-
-    let onTapAction: () -> Void
-
-    var body: some View {
-        HStack {
-            ForEach(TimeTabs.allCases, id: \.self) { timeTab in
-                CustomSegmentedPickerItem(
-                    title: timeTab.localizedStringResource, timeTab: timeTab,
-                    selectedTimeTab: $selectedTimeTab, onTapAction: onTapAction)
-            }
-        }
-        .background(Color.gray.opacity(0.2))
-        .cornerRadius(8)
-    }
-}
-
-struct CustomSegmentedPickerItem: View {
-    let title: LocalizedStringResource
-    let timeTab: TimeTabs
-    @Binding var selectedTimeTab: TimeTabs
-
-    let onTapAction: () -> Void
-
-    var body: some View {
-        Text(title)
-            .font(.subheadline)
-            .padding(.vertical, 4)
-            .frame(maxWidth: .infinity)
-            .background(selectedTimeTab == timeTab ? .blue : Color.clear)
-            .foregroundColor(selectedTimeTab == timeTab ? .white : .secondary)
-            .cornerRadius(8)
-            .contentShape(Rectangle())
-            .onTapGesture {
-                selectedTimeTab = timeTab
-                onTapAction()
-            }
     }
 }
 
@@ -653,20 +628,6 @@ enum EventListType: Equatable {
     case all
     case profile(String)
     //    case liveActivity(String)
-}
-
-enum TimeTabs: CaseIterable {
-    case upcoming
-    case past
-
-    var localizedStringResource: LocalizedStringResource {
-        switch self {
-        case .upcoming:
-            "upcoming"
-        case .past:
-            "past"
-        }
-    }
 }
 
 //struct EventListView_Previews: PreviewProvider {
