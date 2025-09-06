@@ -27,7 +27,7 @@ class AppState: ObservableObject, Hashable, RelayURLValidating, EventCreating {
     let privateKeySecureStorage = PrivateKeySecureStorage()
 
     let modelContext: ModelContext
-    
+
     let nostrWalletConnectStorage = NostrWalletConnectKeyStorage()
 
     @Published var relayReadPool: RelayPool = RelayPool(relays: [])
@@ -47,9 +47,9 @@ class AppState: ObservableObject, Hashable, RelayURLValidating, EventCreating {
     @Published var eventsTrie = Trie<String>()
     @Published var liveActivitiesTrie = Trie<String>()
     @Published var pubkeyTrie = Trie<String>()
-    
+
     @Published var playerConfig: PlayerConfig = .init()
-    
+
     @Published var wallet: WalletModel?
 
     // Keep track of relay pool active subscriptions and the until filter so that we can limit the scope of how much we query from the relay pools.
@@ -58,7 +58,7 @@ class AppState: ObservableObject, Hashable, RelayURLValidating, EventCreating {
     var liveActivityEventSubscriptionCounts = [String: Int]()
     var liveChatSubscriptionCounts: [String: String] = [:]
     var followListEventSubscriptionCounts: [String: String] = [:]
-    
+
     // Create a queue for batching database operations
     private let dbQueue = DispatchQueue(label: "com.app.dbQueue", qos: .utility)
     private var pendingEvents = [NostrEvent]()
@@ -67,7 +67,7 @@ class AppState: ObservableObject, Hashable, RelayURLValidating, EventCreating {
 
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
-        
+
         if let publicKey = self.publicKey {
             self.wallet = WalletModel(publicKey: publicKey)
         } else {
@@ -398,13 +398,15 @@ class AppState: ObservableObject, Hashable, RelayURLValidating, EventCreating {
 }
 
 extension AppState: EventVerifying, RelayDelegate {
-//    func relay(_ relay: NostrSDK.Relay, didReceive response: NostrSDK.RelayResponse) {
-//        return
-//    }
+    //    func relay(_ relay: NostrSDK.Relay, didReceive response: NostrSDK.RelayResponse) {
+    //        return
+    //    }
 
     func relayStateDidChange(_ relay: Relay, state: Relay.State) {
         guard relayReadPool.relays.contains(relay) || relayWritePool.relays.contains(relay) else {
-            print("Relay \(relay.url.absoluteString) changed state to \(state) but it is not in the read or write relay pool. Doing nothing.")
+            print(
+                "Relay \(relay.url.absoluteString) changed state to \(state) but it is not in the read or write relay pool. Doing nothing."
+            )
             return
         }
 
@@ -437,11 +439,11 @@ extension AppState: EventVerifying, RelayDelegate {
                 let missingMetadataFilter = Filter(
                     authors: Array(pubkeysToFetchMetadata),
                     kinds: [
-                        EventKind.metadata.rawValue,
-//                        EventKind.liveActivities.rawValue,
-//                        EventKind.deletion.rawValue,
+                        EventKind.metadata.rawValue
+                            //                        EventKind.liveActivities.rawValue,
+                            //                        EventKind.deletion.rawValue,
                     ],
-//                    since: Int(
+                    //                    since: Int(
                     until: Int(until.timeIntervalSince1970)
                 )
             else {
@@ -473,7 +475,7 @@ extension AppState: EventVerifying, RelayDelegate {
                 kinds: [
                     EventKind.metadata.rawValue,
                     EventKind.liveActivities.rawValue,
-//                    EventKind.deletion.rawValue,
+                        //                    EventKind.deletion.rawValue,
                 ],
                 since: since,
                 until: Int(until.timeIntervalSince1970)
@@ -543,7 +545,7 @@ extension AppState: EventVerifying, RelayDelegate {
                             EventKind.metadata.rawValue,
                             EventKind.followList.rawValue,
                             EventKind.liveActivities.rawValue,
-//                            EventKind.deletion.rawValue,
+                                //                            EventKind.deletion.rawValue,
                         ],
                         since: since,
                         until: Int(until.timeIntervalSince1970)
@@ -632,10 +634,14 @@ extension AppState: EventVerifying, RelayDelegate {
     private func didReceiveFollowListEvent(
         _ followListEvent: FollowListEvent, shouldPullMissingEvents: Bool = false
     ) {
+        // Nostr replaceable event deduplication: only keep the latest event per pubkey
         if let existingFollowList = self.followListEvents[followListEvent.pubkey] {
-            if existingFollowList.createdAt < followListEvent.createdAt {
-                cache(followListEvent, shouldPullMissingEvents: shouldPullMissingEvents)
+            // If incoming event is older or equal, ignore it
+            if followListEvent.createdAt <= existingFollowList.createdAt {
+                return
             }
+            // If incoming event is newer, replace the old one
+            cache(followListEvent, shouldPullMissingEvents: shouldPullMissingEvents)
         } else {
             cache(followListEvent, shouldPullMissingEvents: shouldPullMissingEvents)
         }
@@ -663,48 +669,63 @@ extension AppState: EventVerifying, RelayDelegate {
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self = self else { return }
             if let existingMetadataEvent = self.metadataEvents[metadataEvent.pubkey] {
-                if existingMetadataEvent.createdAt < metadataEvent.createdAt {
-                    if let existingUserMetadata = existingMetadataEvent.userMetadata {
-                        if let existingName = existingUserMetadata.name?.trimmedOrNilIfEmpty,
-                            existingName != newName {
-                            // Since trie updates might need to be thread-safe, dispatch back to main if required
-                            DispatchQueue.main.async {
-                                self.pubkeyTrie.remove(key: existingName, value: existingMetadataEvent.pubkey)
-                            }
-                        }
-                        if let existingDisplayName = existingUserMetadata.displayName?.trimmedOrNilIfEmpty,
-                            existingDisplayName != newDisplayName {
-                            DispatchQueue.main.async {
-                                self.pubkeyTrie.remove(key: existingDisplayName, value: existingMetadataEvent.pubkey)
-                            }
-                        }
-                    }
-                } else {
+                // Nostr replaceable event deduplication: ignore older or equal events
+                if metadataEvent.createdAt <= existingMetadataEvent.createdAt {
                     return
                 }
+                // Process replacement of newer event
+                if let existingUserMetadata = existingMetadataEvent.userMetadata {
+                    if let existingName = existingUserMetadata.name?.trimmedOrNilIfEmpty,
+                        existingName != newName
+                    {
+                        // Since trie updates might need to be thread-safe, dispatch back to main if required
+                        DispatchQueue.main.async {
+                            self.pubkeyTrie.remove(
+                                key: existingName, value: existingMetadataEvent.pubkey)
+                        }
+                    }
+                    if let existingDisplayName = existingUserMetadata.displayName?
+                        .trimmedOrNilIfEmpty,
+                        existingDisplayName != newDisplayName
+                    {
+                        DispatchQueue.main.async {
+                            self.pubkeyTrie.remove(
+                                key: existingDisplayName, value: existingMetadataEvent.pubkey)
+                        }
+                    }
+                }
             }
-            
+
             // Update the metadata dictionary on the main thread (assuming it is used for UI)
             DispatchQueue.main.async {
                 self.metadataEvents[metadataEvent.pubkey] = metadataEvent
             }
-            
+
             // Offload trie insertions if possible. If your trie is not thread‑safe, you must do these on the main thread.
             // Here we assume the trie operations are lightweight, so we dispatch them on main:
             DispatchQueue.main.async {
                 if let userMetadata = metadataEvent.userMetadata {
-                    if let name = userMetadata.name?.trimmingCharacters(in: .whitespacesAndNewlines) {
+                    if let name = userMetadata.name?.trimmingCharacters(in: .whitespacesAndNewlines)
+                    {
                         _ = self.pubkeyTrie.insert(
                             key: name,
                             value: metadataEvent.pubkey,
-                            options: [.includeCaseInsensitiveMatches, .includeDiacriticsInsensitiveMatches]
+                            options: [
+                                .includeCaseInsensitiveMatches,
+                                .includeDiacriticsInsensitiveMatches,
+                            ]
                         )
                     }
-                    if let displayName = userMetadata.displayName?.trimmingCharacters(in: .whitespacesAndNewlines) {
+                    if let displayName = userMetadata.displayName?.trimmingCharacters(
+                        in: .whitespacesAndNewlines)
+                    {
                         _ = self.pubkeyTrie.insert(
                             key: displayName,
                             value: metadataEvent.pubkey,
-                            options: [.includeCaseInsensitiveMatches, .includeDiacriticsInsensitiveMatches]
+                            options: [
+                                .includeCaseInsensitiveMatches,
+                                .includeDiacriticsInsensitiveMatches,
+                            ]
                         )
                     }
                 }
@@ -717,32 +738,47 @@ extension AppState: EventVerifying, RelayDelegate {
 
     private func didReceiveLiveActivitiesEvent(_ liveActivitiesEvent: LiveActivitiesEvent) {
         guard let eventCoordinates = liveActivitiesEvent.replaceableEventCoordinates()?.tag.value,
-              let startTimestamp = liveActivitiesEvent.startsAt,
-              startTimestamp <= liveActivitiesEvent.endsAt ?? startTimestamp,
-              startTimestamp.timeIntervalSince1970 > 0
+            let startTimestamp = liveActivitiesEvent.startsAt,
+            startTimestamp <= liveActivitiesEvent.endsAt ?? startTimestamp,
+            startTimestamp.timeIntervalSince1970 > 0
         else {
             return
         }
 
-        // Replace direct assignment with the new method
-        self.addLiveActivity(liveActivitiesEvent, toEventCoordinate: eventCoordinates)
-        
-        // Update the trie (if needed)
-        updateLiveActivitiesTrie(newEvent: liveActivitiesEvent)
+        // Handle Nostr replaceable event deduplication
+        if let existingEvents = liveActivitiesEvents[eventCoordinates] {
+            // Find the most recent event for this coordinate
+            if let mostRecentEvent = existingEvents.max(by: { $0.createdAt < $1.createdAt }) {
+                // If incoming event is older or equal, ignore it
+                if liveActivitiesEvent.createdAt <= mostRecentEvent.createdAt {
+                    return
+                }
+                // If incoming event is newer, we'll replace the old one
+                updateLiveActivitiesTrie(oldEvent: mostRecentEvent, newEvent: liveActivitiesEvent)
+            }
+        } else {
+            // No existing events, just update trie with new event
+            updateLiveActivitiesTrie(newEvent: liveActivitiesEvent)
+        }
+
+        // Replace with the latest event (Nostr replaceable event semantics)
+        self.replaceLiveActivity(liveActivitiesEvent, forEventCoordinate: eventCoordinates)
     }
-    
-    private func addLiveActivity(_ activity: LiveActivitiesEvent, toEventCoordinate coordinate: String) {
+
+    private func addLiveActivity(
+        _ activity: LiveActivitiesEvent, toEventCoordinate coordinate: String
+    ) {
         // Initialize the array if it doesn't exist
         if liveActivitiesEvents[coordinate] == nil {
             liveActivitiesEvents[coordinate] = []
         }
-        
+
         guard var activities = liveActivitiesEvents[coordinate] else { return }
-        
+
         // Prevent duplicates
         if !activities.contains(where: { $0.id == activity.id }) {
             activities.append(activity)
-            
+
             // Enforce memory limits by trimming oldest events
             if activities.count > CollectionLimits.maxLiveActivitiesEvents {
                 // Sort by creation date (newest first)
@@ -750,24 +786,47 @@ extension AppState: EventVerifying, RelayDelegate {
                 // Keep only the latest events
                 activities = Array(activities.prefix(CollectionLimits.maxLiveActivitiesEvents))
             }
-            
+
             liveActivitiesEvents[coordinate] = activities
         }
     }
 
+    /// Replaces live activity events for a coordinate with the latest event (Nostr replaceable event semantics)
+    private func replaceLiveActivity(
+        _ latestActivity: LiveActivitiesEvent, forEventCoordinate coordinate: String
+    ) {
+        // For replaceable events in Nostr, we should only keep the latest version
+        // This implements proper Nostr protocol deduplication
+        liveActivitiesEvents[coordinate] = [latestActivity]
+    }
+
+    /// Utility method to check if a Nostr event should replace an existing one
+    /// Returns true if newEvent is newer than existingEvent
+    private func shouldReplaceNostrEvent<T: NostrEvent>(_ existingEvent: T?, with newEvent: T)
+        -> Bool
+    {
+        guard let existingEvent = existingEvent else {
+            return true  // No existing event, so new event should be added
+        }
+
+        // In Nostr, newer events (higher createdAt timestamp) replace older ones
+        return newEvent.createdAt > existingEvent.createdAt
+    }
+
     private func didReceiveZapReceiptEvent(_ zapReceipt: LightningZapsReceiptEvent) {
         guard let eventCoordinate = zapReceipt.eventCoordinate else { return }
-        
+
         DispatchQueue.main.async {
             // Continue maintaining your original collection if needed
             if self.zapReceiptEvents[eventCoordinate] == nil {
                 self.zapReceiptEvents[eventCoordinate] = []
             }
-            
+
             // Prevent duplicates using event ID
-            if !self.zapReceiptEvents[eventCoordinate]!.contains(where: { $0.id == zapReceipt.id }) {
+            if !self.zapReceiptEvents[eventCoordinate]!.contains(where: { $0.id == zapReceipt.id })
+            {
                 self.zapReceiptEvents[eventCoordinate]!.append(zapReceipt)
-                
+
                 // Update the total amount - handle the optional properly
                 if let amount = zapReceipt.description?.amount {
                     self.eventZapTotals[eventCoordinate, default: 0] += Int64(amount)
@@ -775,26 +834,32 @@ extension AppState: EventVerifying, RelayDelegate {
             }
         }
     }
-    
+
     func subscribeToLiveChat(for event: LiveActivitiesEvent) {
         guard let eventCoordinate = event.replaceableEventCoordinates()?.tag.value,
-              !liveChatSubscriptionCounts.values.contains(eventCoordinate) else { return }
-        
+            !liveChatSubscriptionCounts.values.contains(eventCoordinate)
+        else { return }
+
         // Create filter with proper tag structure
-        guard let filter = Filter(
-            kinds: [EventKind.liveChatMessage.rawValue, /*EventKind.zapRequest.rawValue,*/ EventKind.zapReceipt.rawValue],
-            tags: ["a": [eventCoordinate]],  // Note the array of arrays
-            since: 0
-        ) else {
+        guard
+            let filter = Filter(
+                kinds: [
+                    EventKind.liveChatMessage.rawValue, /*EventKind.zapRequest.rawValue,*/
+                    EventKind.zapReceipt.rawValue,
+                ],
+                tags: ["a": [eventCoordinate]],  // Note the array of arrays
+                since: 0
+            )
+        else {
             print("Failed to create live chat filter")
             return
         }
-        
+
         // Add time constraints to get historical messages
         //        if let liveEventStart = event.startsAt {
         //            filter.since = Int(liveEventStart.timeIntervalSince1970)
         //        }
-        
+
         let subscriptionId = relayReadPool.subscribe(with: filter)
         liveChatSubscriptionCounts[subscriptionId] = eventCoordinate
         print("Subscribed to live chat \(eventCoordinate) with ID: \(subscriptionId)")
@@ -802,7 +867,7 @@ extension AppState: EventVerifying, RelayDelegate {
 
     func unsubscribeFromLiveChat(for event: LiveActivitiesEvent) {
         guard let eventCoordinate = event.replaceableEventCoordinates()?.tag.value else { return }
-        
+
         liveChatSubscriptionCounts
             .filter { $0.value == eventCoordinate }
             .keys
@@ -813,34 +878,36 @@ extension AppState: EventVerifying, RelayDelegate {
                 zapReceiptEvents.removeValue(forKey: eventCoordinate)
             }
     }
-    
+
     func subscribeToProfile(for publicKeyHex: String) {
         guard !followListEventSubscriptionCounts.values.contains(publicKeyHex) else { return }
-        
+
         // Create filter with proper tag structure
-        guard let filter = Filter(
-            authors: [publicKeyHex, appSettings?.activeProfile?.publicKeyHex].compactMap { $0 },
-            kinds: [
-                EventKind.metadata.rawValue,
-                EventKind.followList.rawValue,
-//                EventKind.liveActivities.rawValue,
-//                    EventKind.deletion.rawValue
-            ]
-        ) else {
+        guard
+            let filter = Filter(
+                authors: [publicKeyHex, appSettings?.activeProfile?.publicKeyHex].compactMap { $0 },
+                kinds: [
+                    EventKind.metadata.rawValue,
+                    EventKind.followList.rawValue,
+                        //                EventKind.liveActivities.rawValue,
+                        //                    EventKind.deletion.rawValue
+                ]
+            )
+        else {
             print("Unable to create profile filter.")
             return
         }
-        
+
         // Add time constraints to get historical messages
         //        if let liveEventStart = event.startsAt {
         //            filter.since = Int(liveEventStart.timeIntervalSince1970)
         //        }
-        
+
         let subscriptionId = relayReadPool.subscribe(with: filter)
         followListEventSubscriptionCounts[subscriptionId] = publicKeyHex
         print("Subscribed to profile \(publicKeyHex) with ID: \(subscriptionId)")
     }
-    
+
     func unsubscribeFromProfile(for publicKeyHex: String) {
         followListEventSubscriptionCounts
             .filter { $0.value == publicKeyHex }
@@ -848,36 +915,39 @@ extension AppState: EventVerifying, RelayDelegate {
             .forEach { subscriptionId in
                 relayReadPool.closeSubscription(with: subscriptionId)
                 followListEventSubscriptionCounts.removeValue(forKey: subscriptionId)
-//                followListEvents.removeValue(forKey: publicKeyHex)
+                //                followListEvents.removeValue(forKey: publicKeyHex)
             }
     }
-    
+
     private func didReceiveLiveChatMessage(_ message: LiveChatMessageEvent) {
         print("received live chat message", self.liveChatMessagesEvents.count)
         guard let eventReference = message.liveEventReference else { return }
-        let eventCoordinate = "\(eventReference.liveEventKind):\(eventReference.pubkey):\(eventReference.d)"
-        
+        let eventCoordinate =
+            "\(eventReference.liveEventKind):\(eventReference.pubkey):\(eventReference.d)"
+
         DispatchQueue.main.async {
             self.addChatMessage(message, toEventCoordinate: eventCoordinate)
         }
     }
-    
-    private func addChatMessage(_ message: LiveChatMessageEvent, toEventCoordinate coordinate: String) {
+
+    private func addChatMessage(
+        _ message: LiveChatMessageEvent, toEventCoordinate coordinate: String
+    ) {
         if self.liveChatMessagesEvents[coordinate] == nil {
             self.liveChatMessagesEvents[coordinate] = []
         }
-        
+
         var messages = self.liveChatMessagesEvents[coordinate]!
-        
+
         // Prevent duplicates
         if !messages.contains(where: { $0.id == message.id }) {
             messages.append(message)
-            
+
             // Enforce memory limits by trimming oldest messages
             if messages.count > CollectionLimits.maxChatMessagesPerEvent {
                 messages = Array(messages.suffix(CollectionLimits.maxChatMessagesPerEvent))
             }
-            
+
             self.liveChatMessagesEvents[coordinate] = messages
         }
     }
@@ -916,7 +986,7 @@ extension AppState: EventVerifying, RelayDelegate {
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self = self else { return }
             let nostrEvent = event.event
-            
+
             // Perform verification on background thread
             do {
                 try self.verifyEvent(nostrEvent)
@@ -924,7 +994,7 @@ extension AppState: EventVerifying, RelayDelegate {
                 print("Event verification failed: \(error)")
                 return
             }
-            
+
             // Dispatch updates to published properties on the main thread
             DispatchQueue.main.async {
                 _ = self.didReceive(nostrEvent: nostrEvent, relay: relay)
@@ -936,7 +1006,10 @@ extension AppState: EventVerifying, RelayDelegate {
         // Process the event with your existing event-specific handlers.
         switch nostrEvent {
         case let followListEvent as FollowListEvent:
-            self.didReceiveFollowListEvent(followListEvent, shouldPullMissingEvents: nostrEvent.pubkey == appSettings?.activeProfile?.publicKeyHex)
+            self.didReceiveFollowListEvent(
+                followListEvent,
+                shouldPullMissingEvents: nostrEvent.pubkey
+                    == appSettings?.activeProfile?.publicKeyHex)
         case let metadataEvent as MetadataEvent:
             self.didReceiveMetadataEvent(metadataEvent)
         case let liveActivitiesEvent as LiveActivitiesEvent:
@@ -950,7 +1023,7 @@ extension AppState: EventVerifying, RelayDelegate {
         default:
             break
         }
-        
+
         // Check if the event already exists in persistent storage.
         if let existingEvent = self.persistentNostrEvent(nostrEvent.id) {
             if let relay, !existingEvent.relays.contains(where: { $0 == relay.url }) {
@@ -960,10 +1033,10 @@ extension AppState: EventVerifying, RelayDelegate {
         } else {
             // Instead of immediately inserting and saving, enqueue the event for batch processing.
             self.enqueueEvent(nostrEvent)
-            return nil // The persistent event will be created asynchronously.
+            return nil  // The persistent event will be created asynchronously.
         }
     }
-    
+
     /// Enqueues an incoming event for batch processing.
     private func enqueueEvent(_ event: NostrEvent) {
         DispatchQueue.main.async {
@@ -975,7 +1048,8 @@ extension AppState: EventVerifying, RelayDelegate {
                 self.batchTimer = nil
             } else if self.batchTimer == nil {
                 // Otherwise, set up a timer to process after a short delay (e.g., 1 second).
-                self.batchTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { [weak self] _ in
+                self.batchTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) {
+                    [weak self] _ in
                     self?.processPendingEvents()
                     self?.batchTimer = nil
                 }
@@ -1008,21 +1082,25 @@ extension AppState: EventVerifying, RelayDelegate {
         DispatchQueue.main.async {
             switch response {
             case let .eose(subscriptionId):
-                if self.liveChatSubscriptionCounts.keys.contains(subscriptionId) || self.followListEventSubscriptionCounts.keys.contains(subscriptionId) {
+                if self.liveChatSubscriptionCounts.keys.contains(subscriptionId)
+                    || self.followListEventSubscriptionCounts.keys.contains(subscriptionId)
+                {
                     // Maintain live chat subscription for real-time updates
                     print("Maintaining subscription: \(subscriptionId)")
                 } else {
                     try? relay.closeSubscription(with: subscriptionId)
                     self.updateRelaySubscriptionCounts(closedSubscriptionId: subscriptionId)
                 }
-                
+
             case let .closed(subscriptionId, _):
                 self.liveChatSubscriptionCounts.removeValue(forKey: subscriptionId)
                 self.followListEventSubscriptionCounts.removeValue(forKey: subscriptionId)
                 self.updateRelaySubscriptionCounts(closedSubscriptionId: subscriptionId)
             case let .ok(eventId, success, message):
                 if success {
-                    if let persistentNostrEvent = self.persistentNostrEvent(eventId), !persistentNostrEvent.relays.contains(relay.url) {
+                    if let persistentNostrEvent = self.persistentNostrEvent(eventId),
+                        !persistentNostrEvent.relays.contains(relay.url)
+                    {
                         persistentNostrEvent.relays.append(relay.url)
                     }
                 } else if message.prefix == .rateLimited {
@@ -1054,7 +1132,9 @@ extension AppState: EventVerifying, RelayDelegate {
         }
 
         // Handle live activity event subscription counts
-        if let liveActivityEventSubscriptionCount = liveActivityEventSubscriptionCounts[closedSubscriptionId] {
+        if let liveActivityEventSubscriptionCount = liveActivityEventSubscriptionCounts[
+            closedSubscriptionId]
+        {
             if liveActivityEventSubscriptionCount <= 1 {
                 liveActivityEventSubscriptionCounts.removeValue(forKey: closedSubscriptionId)
 
@@ -1071,43 +1151,49 @@ extension AppState: EventVerifying, RelayDelegate {
                 }
                 pullMissingEventsFromPubkeysAndFollows(hostPubkeys)
             } else {
-                liveActivityEventSubscriptionCounts[closedSubscriptionId] = liveActivityEventSubscriptionCount - 1
+                liveActivityEventSubscriptionCounts[closedSubscriptionId] =
+                    liveActivityEventSubscriptionCount - 1
             }
         }
     }
 
-    func updateLiveActivitiesTrie(oldEvent: LiveActivitiesEvent? = nil, newEvent: LiveActivitiesEvent) {
+    func updateLiveActivitiesTrie(
+        oldEvent: LiveActivitiesEvent? = nil, newEvent: LiveActivitiesEvent
+    ) {
         // First, get the event coordinate. If missing, nothing to do.
         guard let eventCoordinates = newEvent.replaceableEventCoordinates()?.tag.value else {
             return
         }
-        
+
         // Ignore new events that are older or equal to an existing one.
         if let oldEvent, oldEvent.createdAt >= newEvent.createdAt {
             return
         }
-        
+
         // Offload key extraction and decision-making to a background queue.
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self = self else { return }
-            
+
             // Extract new values.
             let newTitle = newEvent.firstValueForRawTagName("title")?.trimmedOrNilIfEmpty
             let newSummary = newEvent.firstValueForRawTagName("summary")?.trimmedOrNilIfEmpty
-            
+
             // Prepare removals based on differences from the old event.
             var removals = [(key: String, value: String)]()
             if let oldEvent = oldEvent {
                 if let oldTitle = oldEvent.firstValueForRawTagName("title")?.trimmedOrNilIfEmpty,
-                   oldTitle != newTitle {
+                    oldTitle != newTitle
+                {
                     removals.append((key: oldTitle, value: eventCoordinates))
                 }
-                if let oldSummary = oldEvent.firstValueForRawTagName("summary")?.trimmedOrNilIfEmpty,
-                   oldSummary != newSummary {
+                if let oldSummary = oldEvent.firstValueForRawTagName("summary")?
+                    .trimmedOrNilIfEmpty,
+                    oldSummary != newSummary
+                {
                     removals.append((key: oldSummary, value: eventCoordinates))
                 }
             }
-            
+
             // Prepare insertions for all keys.
             var insertions = [(key: String, options: TrieInsertionOptions?)]()
             insertions.append((key: newEvent.id, options: nil))
@@ -1116,25 +1202,39 @@ extension AppState: EventVerifying, RelayDelegate {
                 insertions.append((key: identifier, options: nil))
             }
             if let newTitle = newTitle {
-                insertions.append((key: newTitle, options: [.includeCaseInsensitiveMatches, .includeDiacriticsInsensitiveMatches]))
+                insertions.append(
+                    (
+                        key: newTitle,
+                        options: [
+                            .includeCaseInsensitiveMatches, .includeDiacriticsInsensitiveMatches,
+                        ]
+                    ))
             }
             if let newSummary = newSummary {
-                insertions.append((key: newSummary, options: [.includeCaseInsensitiveMatches, .includeDiacriticsInsensitiveMatches]))
+                insertions.append(
+                    (
+                        key: newSummary,
+                        options: [
+                            .includeCaseInsensitiveMatches, .includeDiacriticsInsensitiveMatches,
+                        ]
+                    ))
             }
-            
+
             // Dispatch the trie modifications back to the main thread.
             DispatchQueue.main.async {
                 // Remove outdated entries.
                 for removal in removals {
                     self.liveActivitiesTrie.remove(key: removal.key, value: removal.value)
                 }
-                
+
                 // Insert new entries.
                 for insertion in insertions {
                     if let options = insertion.options {
-                        _ = self.liveActivitiesTrie.insert(key: insertion.key, value: eventCoordinates, options: options)
+                        _ = self.liveActivitiesTrie.insert(
+                            key: insertion.key, value: eventCoordinates, options: options)
                     } else {
-                        _ = self.liveActivitiesTrie.insert(key: insertion.key, value: eventCoordinates)
+                        _ = self.liveActivitiesTrie.insert(
+                            key: insertion.key, value: eventCoordinates)
                     }
                 }
             }
@@ -1148,23 +1248,31 @@ extension AppState: EventVerifying, RelayDelegate {
 
         for deletedEventCoordinate in deletedEventCoordinates {
             // Update the deletion timestamp for the event coordinate
-            if let existingDeletedEventCoordinateDate = self.deletedEventCoordinates[deletedEventCoordinate.tag.value] {
+            if let existingDeletedEventCoordinateDate = self.deletedEventCoordinates[
+                deletedEventCoordinate.tag.value]
+            {
                 if existingDeletedEventCoordinateDate < deletionEvent.createdDate {
-                    self.deletedEventCoordinates[deletedEventCoordinate.tag.value] = deletionEvent.createdDate
+                    self.deletedEventCoordinates[deletedEventCoordinate.tag.value] =
+                        deletionEvent.createdDate
                 } else {
                     continue
                 }
             } else {
-                self.deletedEventCoordinates[deletedEventCoordinate.tag.value] = deletionEvent.createdDate
+                self.deletedEventCoordinates[deletedEventCoordinate.tag.value] =
+                    deletionEvent.createdDate
             }
 
             // Handle deletion based on event kind
             switch deletedEventCoordinate.kind {
             case .liveActivities:
-                if let liveActivitiesArray = liveActivitiesEvents[deletedEventCoordinate.tag.value] {
+                if let liveActivitiesArray = liveActivitiesEvents[deletedEventCoordinate.tag.value]
+                {
                     // Find the most recent event in the array
-                    if let mostRecentEvent = liveActivitiesArray.max(by: { $0.createdAt < $1.createdAt }),
-                       mostRecentEvent.createdAt <= deletionEvent.createdAt {
+                    if let mostRecentEvent = liveActivitiesArray.max(by: {
+                        $0.createdAt < $1.createdAt
+                    }),
+                        mostRecentEvent.createdAt <= deletionEvent.createdAt
+                    {
                         // Remove the entire array of events for this coordinate
                         liveActivitiesEvents.removeValue(forKey: deletedEventCoordinate.tag.value)
                     }
@@ -1196,9 +1304,13 @@ extension AppState: EventVerifying, RelayDelegate {
 
                 case let liveActivitiesEvent as LiveActivitiesEvent:
                     // Check if the event coordinates exist in the dictionary
-                    if let eventCoordinates = liveActivitiesEvent.replaceableEventCoordinates()?.tag.value {
+                    if let eventCoordinates = liveActivitiesEvent.replaceableEventCoordinates()?.tag
+                        .value
+                    {
                         // Filter out the event with the matching ID from the array
-                        liveActivitiesEvents[eventCoordinates]?.removeAll { $0.id == liveActivitiesEvent.id }
+                        liveActivitiesEvents[eventCoordinates]?.removeAll {
+                            $0.id == liveActivitiesEvent.id
+                        }
 
                         // If the array is now empty, remove the coordinate entry entirely
                         if liveActivitiesEvents[eventCoordinates]?.isEmpty == true {
@@ -1220,7 +1332,7 @@ extension AppState: EventVerifying, RelayDelegate {
             }
         }
     }
-    
+
     func saveFollowList(pubkeys: [String]) -> Bool {
         // Make sure pubkeys is not empty.
         guard pubkeys.count > 0 else { return false }
@@ -1243,7 +1355,7 @@ extension AppState: EventVerifying, RelayDelegate {
         }
         return false
     }
-    
+
     private func updateCollectionsWithBatchResults(_ persistentEvents: [PersistentNostrEvent]) {
         for persistentEvent in persistentEvents {
             let nostrEvent = persistentEvent.nostrEvent
@@ -1256,7 +1368,9 @@ extension AppState: EventVerifying, RelayDelegate {
                 self.metadataEvents[metadataEvent.pubkey] = metadataEvent
             case let liveActivitiesEvent as LiveActivitiesEvent:
                 // Use event coordinates as the key (if available).
-                if let eventCoordinates = liveActivitiesEvent.replaceableEventCoordinates()?.tag.value {
+                if let eventCoordinates = liveActivitiesEvent.replaceableEventCoordinates()?.tag
+                    .value
+                {
                     self.addLiveActivity(liveActivitiesEvent, toEventCoordinate: eventCoordinates)
                 }
             default:
@@ -1271,34 +1385,34 @@ extension AppState: EventVerifying, RelayDelegate {
     private func processPendingEvents() {
         // Guard against an empty pendingEvents array.
         guard !pendingEvents.isEmpty else { return }
-        
+
         // Take a batch of events up to the batch size.
         let batch = Array(pendingEvents.prefix(batchSize))
         pendingEvents.removeFirst(min(batchSize, pendingEvents.count))
-        
+
         // Offload heavy processing to a background queue.
         dbQueue.async { [weak self] in
             guard let self = self else { return }
-            
+
             // Create persistent objects for each event in the background.
             let persistentEvents = batch.map { PersistentNostrEvent(nostrEvent: $0) }
-            
+
             // Now switch to the main thread to modify the ModelContext.
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
-                
+
                 // Insert all persistent events into the model context.
                 for event in persistentEvents {
                     self.modelContext.insert(event)
                 }
-                
+
                 // Save the batch with a single database write.
                 do {
                     try self.modelContext.save()
                 } catch {
                     print("Error saving batch of events: \(error)")
                 }
-                
+
                 // Update UI/in-memory collections on the main thread.
                 self.updateCollectionsWithBatchResults(persistentEvents)
             }
