@@ -308,36 +308,45 @@ struct VideoListView: View, MetadataCoding {
                 ZStack(alignment: .topLeading) {
                     GeometryReader { proxy in
                         let size = proxy.size
+                        
+                        ZStack(alignment: .topLeading) {
+                            KFImage.url(item.image)
+                                .placeholder {
+                                    ZStack {
+                                        Rectangle()
+                                            .fill(Color.gray.opacity(0.3))
 
-                        KFImage.url(item.image)
-                            .placeholder {
-                                // Placeholder image when no image is available
-                                ZStack {
-                                    Rectangle()
-                                        .fill(Color.gray.opacity(0.3))
+                                        VStack(spacing: 8) {
+                                            Image(systemName: "video.slash")
+                                                .font(.system(size: 30))
+                                                .foregroundColor(.gray)
 
-                                    VStack(spacing: 8) {
-                                        Image(systemName: "video.slash")
-                                            .font(.system(size: 40))
-                                            .foregroundColor(.gray)
-
-                                        Text("No Preview")
-                                            .font(.caption)
-                                            .foregroundColor(.gray)
+                                            Text("No Preview")
+                                                .font(.caption)
+                                                .foregroundColor(.gray)
+                                        }
                                     }
                                 }
+                                .resizable()
+                                .aspectRatio(16 / 9, contentMode: .fill)
+                                .frame(width: size.width, height: size.height)
+                                .clipped()
+                                .cornerRadius(12)
+
+                            // Live/Ended badge
+                            HStack {
+                                Text(item.status != .live ? "ENDED" : "LIVE")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(item.status != .live ? Color.gray : Color.red)
+                                    .cornerRadius(4)
+
+                                Spacer()
                             }
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(
-                                width: size.width,
-                                height: size.height
-                            )
-                            .clipShape(
-                                CustomCorner(
-                                    corners: [
-                                        .bottomLeft, .bottomRight, .topLeft, .topRight,
-                                    ], radius: 10))
+                            .padding(8)
+                        }
                     }
                     .frame(height: 250)
                     .offset(y: selectedEvent?.id == item.id && animateView ? safeArea().top : 0)
@@ -387,15 +396,16 @@ struct VideoListView: View, MetadataCoding {
                     }
 
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(item.title ?? "no title")
-                            .font(.body)
-                            .foregroundColor(.gray)
+                        Text(item.title ?? "Untitled Stream")
+                            .font(.headline)
                             .lineLimit(2)
+                            .multilineTextAlignment(.leading)
 
-                        Text(item.status != .live ? "ENDED" : "LIVE")
-                            .font(.caption)
-                            .foregroundColor(.red)
-                            .lineLimit(1)
+                        if let startTime = item.startsAt {
+                            Text(formatStreamTime(startTime))
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }.opacity(showDetailPage ? 0 : 1)

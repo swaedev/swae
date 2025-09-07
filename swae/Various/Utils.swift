@@ -801,3 +801,10 @@ func makeUniqueName<T: Named>(name: String, existingNames: [T]) -> String {
         number += 1
     }
 }
+
+func formatStreamTime(_ date: Date) -> String {
+    let formatter = DateFormatter()
+    formatter.dateStyle = .medium
+    formatter.timeStyle = .short
+    return formatter.string(from: date)
+}
