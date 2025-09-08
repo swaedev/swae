@@ -147,7 +147,10 @@ class AppState: ObservableObject, Hashable, RelayURLValidating, EventCreating {
         let allEvents = liveActivitiesEvents.values.flatMap { $0 }
 
         return allEvents.filter { event in
-            event.participants.first(where: { $0.role == "host" })?.pubkey?.hex == publicKeyHex
+            // Some older events may not include a host role in participants; fall back to author
+            event.pubkey == publicKeyHex
+                || event.participants.first(where: { $0.role?.lowercased() == "host" })?
+                    .pubkey?.hex == publicKeyHex
         }
     }
 
@@ -439,8 +442,6 @@ extension AppState: EventVerifying, RelayDelegate {
                     authors: Array(pubkeysToFetchMetadata),
                     kinds: [
                         EventKind.metadata.rawValue
-                            //                        EventKind.liveActivities.rawValue,
-                            //                        EventKind.deletion.rawValue,
                     ],
                     //                    since: Int(
                     until: Int(until.timeIntervalSince1970)
@@ -474,7 +475,6 @@ extension AppState: EventVerifying, RelayDelegate {
                 kinds: [
                     EventKind.metadata.rawValue,
                     EventKind.liveActivities.rawValue,
-                        //                    EventKind.deletion.rawValue,
                 ],
                 since: since,
                 until: Int(until.timeIntervalSince1970)
@@ -544,7 +544,6 @@ extension AppState: EventVerifying, RelayDelegate {
                             EventKind.metadata.rawValue,
                             EventKind.followList.rawValue,
                             EventKind.liveActivities.rawValue,
-                                //                            EventKind.deletion.rawValue,
                         ],
                         since: since,
                         until: Int(until.timeIntervalSince1970)
@@ -736,10 +735,8 @@ extension AppState: EventVerifying, RelayDelegate {
     }
 
     private func didReceiveLiveActivitiesEvent(_ liveActivitiesEvent: LiveActivitiesEvent) {
-        guard let eventCoordinates = liveActivitiesEvent.replaceableEventCoordinates()?.tag.value,
-            let startTimestamp = liveActivitiesEvent.startsAt,
-            startTimestamp <= liveActivitiesEvent.endsAt ?? startTimestamp,
-            startTimestamp.timeIntervalSince1970 > 0
+        // Accept events even if 'starts' tag is missing (older events). Only require valid coordinates.
+        guard let eventCoordinates = liveActivitiesEvent.replaceableEventCoordinates()?.tag.value
         else {
             return
         }
@@ -889,8 +886,6 @@ extension AppState: EventVerifying, RelayDelegate {
                 kinds: [
                     EventKind.metadata.rawValue,
                     EventKind.followList.rawValue,
-                    EventKind.liveActivities.rawValue,
-                        //                    EventKind.deletion.rawValue
                 ],
                 since: 0
             )
@@ -898,30 +893,44 @@ extension AppState: EventVerifying, RelayDelegate {
             print("Unable to create profile filter.")
             return
         }
-        
-        guard
-            let filter1 = Filter(
-                kinds: [
-                    EventKind.metadata.rawValue,
-                    EventKind.followList.rawValue,
-                    EventKind.liveActivities.rawValue,
-                        //                    EventKind.deletion.rawValue
-                ],
-                tags: ["p": [publicKeyHex]],
-                since: 0
-            )
-        else {
-            print("Unable to create profile filter.")
-            return
-        }
-
 
         let subscriptionId = relayReadPool.subscribe(with: filter)
         followListEventSubscriptionCounts[subscriptionId] = publicKeyHex
-        print("Subscribed to profile \(publicKeyHex) with ID: \(subscriptionId)")
-//        let subscriptionId1 = relayReadPool.subscribe(with: filter1)
-//        followListEventSubscriptionCounts[subscriptionId1] = publicKeyHex
-//        print("Subscribed to profile \(publicKeyHex) with ID: \(subscriptionId1)")
+        print("Subscribed (metadata/follow) to profile \(publicKeyHex) with ID: \(subscriptionId)")
+
+        // One-shot historical fetch with larger window to bypass relay defaults
+        let nowTs = Int(Date().timeIntervalSince1970)
+        let historyLimit = 2000
+//        if let historyAuthor = Filter(
+//            authors: [publicKeyHex],
+//            kinds: [EventKind.liveActivities.rawValue],
+//            since: 0,
+//            until: nowTs,
+//            limit: historyLimit
+//        ) {
+//            _ = relayReadPool.subscribe(with: historyAuthor)
+//            print("Subscribed (history live author) for profile \(publicKeyHex)")
+//        }
+        if let historyP = Filter(
+            kinds: [EventKind.liveActivities.rawValue],
+            tags: ["p": [publicKeyHex]],
+            since: 0,
+            limit: historyLimit
+        ) {
+            _ = relayReadPool.subscribe(with: historyP)
+            print("Subscribed (history live #p) for profile \(publicKeyHex)")
+        }
+
+        // Lightweight live stream for new updates from now
+        if let liveAuthor = Filter(
+            kinds: [EventKind.liveActivities.rawValue],
+            tags: ["p": [publicKeyHex]],
+            since: nowTs + 1
+        ) {
+            let liveId = relayReadPool.subscribe(with: liveAuthor)
+            followListEventSubscriptionCounts[liveId] = publicKeyHex
+            print("Subscribed (live author) to profile \(publicKeyHex) with ID: \(liveId)")
+        }
     }
 
     func unsubscribeFromProfile(for publicKeyHex: String) {
