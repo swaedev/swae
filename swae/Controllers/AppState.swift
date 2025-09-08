@@ -183,7 +183,7 @@ class AppState: ObservableObject, Hashable, RelayURLValidating, EventCreating {
 
         let writeRelays =
             relaySettings
-            .filter { $0.read }
+            .filter { $0.write }
             .compactMap { URL(string: $0.relayURLString) }
             .compactMap { try? Relay(url: $0) }
 
@@ -901,16 +901,16 @@ extension AppState: EventVerifying, RelayDelegate {
         // One-shot historical fetch with larger window to bypass relay defaults
         let nowTs = Int(Date().timeIntervalSince1970)
         let historyLimit = 2000
-//        if let historyAuthor = Filter(
-//            authors: [publicKeyHex],
-//            kinds: [EventKind.liveActivities.rawValue],
-//            since: 0,
-//            until: nowTs,
-//            limit: historyLimit
-//        ) {
-//            _ = relayReadPool.subscribe(with: historyAuthor)
-//            print("Subscribed (history live author) for profile \(publicKeyHex)")
-//        }
+        //        if let historyAuthor = Filter(
+        //            authors: [publicKeyHex],
+        //            kinds: [EventKind.liveActivities.rawValue],
+        //            since: 0,
+        //            until: nowTs,
+        //            limit: historyLimit
+        //        ) {
+        //            _ = relayReadPool.subscribe(with: historyAuthor)
+        //            print("Subscribed (history live author) for profile \(publicKeyHex)")
+        //        }
         if let historyP = Filter(
             kinds: [EventKind.liveActivities.rawValue],
             tags: ["p": [publicKeyHex]],
