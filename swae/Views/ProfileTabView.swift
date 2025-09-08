@@ -11,85 +11,108 @@ import SwiftUI
 
 struct ProfileTabView: View {
     @State private var selectedTab = 0
+    @State private var isHorizontalSwipe = false
 
     var body: some View {
+        VStack(spacing: 0) {
+            // Custom Tab Header
             VStack(spacing: 0) {
-                // Top Tab Bar
-//                HStack {
-//                    ProfileTabButton(title: "Live Streams", selectedTab: $selectedTab, tabIndex: 0)
-//                    ProfileTabButton(title: "Shorts", selectedTab: $selectedTab, tabIndex: 1)
-//                }
-//                .padding(.horizontal)
-//                .padding(.top)
+                HStack(spacing: 0) {
+                    ProfileTabButton(title: "Live Streams", selectedTab: $selectedTab, tabIndex: 0)
+                    ProfileTabButton(title: "Shorts", selectedTab: $selectedTab, tabIndex: 1)
+                }
+                .padding(.horizontal)
+                .padding(.top)
 
-                // Underline Indicator
-//                GeometryReader { geo in
-//                    let buttonWidth = geo.size.width / 2
-//                    Capsule()
-//                        .fill(Color.purple)
-//                        .frame(width: 75, height: 2)
-//                        .offset(x: selectedTab == 0 ? (buttonWidth - 75) / 2 : buttonWidth + (buttonWidth - 75) / 2)
-//                        .animation(.easeInOut, value: selectedTab)
-//                }
-//                .frame(height: 2)
+                // Animated Indicator
+                GeometryReader { geo in
+                    let buttonWidth = geo.size.width / 2
+                    let indicatorWidth: CGFloat = 75
 
-                LiveActivities()
-
-                // TabView
-//                TabView(selection: $selectedTab) {
-//                    LiveActivities()
-//                        .tag(0)
-//                    Shorts()
-//                        .tag(1)
-//                }
-//                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-//                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    Capsule()
+                        .fill(Color.purple)
+                        .frame(width: indicatorWidth, height: 2)
+                        .offset(
+                            x: selectedTab == 0
+                                ? (buttonWidth - indicatorWidth) / 2
+                                : buttonWidth + (buttonWidth - indicatorWidth) / 2
+                        )
+                        .animation(.easeInOut(duration: 0.3), value: selectedTab)
+                }
+                .frame(height: 2)
+                .padding(.horizontal)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            ZStack(alignment: .topLeading) {
+                if selectedTab == 0 {
+                    LiveActivitiesView()
+                        .transition(.move(edge: .leading))
+                } else {
+                    ShortsView()
+                        .transition(.move(edge: .trailing))
+                }
+            }
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 20)
+                    .onChanged { value in
+                        let dx = value.translation.width
+                        let dy = value.translation.height
+                        // Activate only when clearly horizontal and passes threshold
+                        if abs(dx) > abs(dy) + 10 && abs(dx) > 20 {
+                            isHorizontalSwipe = true
+                        }
+                    }
+                    .onEnded { value in
+                        defer { isHorizontalSwipe = false }
+                        guard isHorizontalSwipe else { return }
+                        let threshold: CGFloat = 60
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            if value.translation.width < -threshold && selectedTab == 0 {
+                                selectedTab = 1
+                            } else if value.translation.width > threshold && selectedTab == 1 {
+                                selectedTab = 0
+                            }
+                        }
+                    }
+            )
         }
+    }
 }
 
-// MARK: - Custom Tab Button
+// MARK: - Custom Tab Button (unchanged)
 struct ProfileTabButton: View {
-    var title: String
+    let title: String
     @Binding var selectedTab: Int
-    var tabIndex: Int
+    let tabIndex: Int
 
     var body: some View {
         Button(action: {
-            withAnimation {
+            withAnimation(.easeInOut(duration: 0.3)) {
                 selectedTab = tabIndex
             }
         }) {
             Text(title)
                 .font(.headline)
-                .foregroundColor(selectedTab == tabIndex ? .purple : .gray)
+                .fontWeight(selectedTab == tabIndex ? .semibold : .medium)
+                .foregroundColor(selectedTab == tabIndex ? .purple : .secondary)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
+                .padding(.vertical, 12)
         }
+        .buttonStyle(PlainButtonStyle())
     }
 }
 
-// MARK: - First Tab Content
-struct LiveActivities: View {
+// MARK: - LiveActivitiesView
+struct LiveActivitiesView: View {
     @EnvironmentObject var appState: AppState
     @State private var timeTabFilter: TimeTabs = .past
+    var publicKeyHex: String? = nil
 
     var body: some View {
         VStack(spacing: 0) {
-            // Time filter picker
-            CustomSegmentedPicker(selectedTimeTab: $timeTabFilter) {
-                // Optional scroll action if needed
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
-
             // Live activities list
-            if let publicKeyHex = appState.publicKey?.hex {
-                let events =
-                    timeTabFilter == .upcoming
-                    ? appState.upcomingProfileEvents(publicKeyHex)
-                    : appState.pastProfileEvents(publicKeyHex)
+            if let key = (publicKeyHex ?? appState.publicKey?.hex) {
+                let events = appState.profileEvents(key)
 
                 if events.isEmpty {
                     VStack {
@@ -104,21 +127,21 @@ struct LiveActivities: View {
                         Spacer()
                     }
                 } else {
-                    ScrollView(.vertical, showsIndicators: false) {
-                        LazyVStack(spacing: 12) {
-                            ForEach(events, id: \.id) { event in
-                                ProfileStreamCard(event: event)
-                                    .onTapGesture {
-                                        appState.playerConfig.selectedLiveActivitiesEvent = event
-                                        withAnimation(.easeInOut(duration: 0.3)) {
-                                            appState.playerConfig.showMiniPlayer = true
-                                        }
+                    //                    ScrollView(.vertical, showsIndicators: false) {
+                    LazyVStack(spacing: 12) {
+                        ForEach(events, id: \.id) { event in
+                            ProfileStreamCard(event: event)
+                                .onTapGesture {
+                                    appState.playerConfig.selectedLiveActivitiesEvent = event
+                                    withAnimation(.easeInOut(duration: 0.3)) {
+                                        appState.playerConfig.showMiniPlayer = true
                                     }
-                            }
+                                }
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.top, 8)
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    //                    }
                 }
             } else {
                 VStack {
@@ -130,16 +153,21 @@ struct LiveActivities: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
 // MARK: - Second Tab Content
-struct Shorts: View {
+struct ShortsView: View {
     var body: some View {
-        Text("yo")
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.green.opacity(0.2))
+        VStack(spacing: 16) {
+            Spacer()
+            Text("No shorts yet")
+                .font(.headline)
+                .foregroundColor(.secondary)
+                .padding(.top, 8)
+            Spacer()
+        }
+        .padding(.horizontal, 16)
     }
 }
 
