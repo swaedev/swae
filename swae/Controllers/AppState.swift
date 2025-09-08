@@ -52,6 +52,9 @@ class AppState: ObservableObject, Hashable, RelayURLValidating, EventCreating {
 
     @Published var wallet: WalletModel?
 
+    // Centralized dedupe/replace logic for all Nostr events
+    let eventStore = NostrEventStore()
+
     // Keep track of relay pool active subscriptions and the until filter so that we can limit the scope of how much we query from the relay pools.
     var metadataSubscriptionCounts = [String: Int]()
     var bootstrapSubscriptionCounts = [String: Int]()
@@ -632,17 +635,13 @@ extension AppState: EventVerifying, RelayDelegate {
     private func didReceiveFollowListEvent(
         _ followListEvent: FollowListEvent, shouldPullMissingEvents: Bool = false
     ) {
-        // Nostr replaceable event deduplication: only keep the latest event per pubkey
+        // Nostr replaceable event deduplication: only keep the latest per pubkey (tie-break by id)
         if let existingFollowList = self.followListEvents[followListEvent.pubkey] {
-            // If incoming event is older or equal, ignore it
-            if followListEvent.createdAt <= existingFollowList.createdAt {
+            if !shouldReplaceByCreatedAtThenId(old: existingFollowList, new: followListEvent) {
                 return
             }
-            // If incoming event is newer, replace the old one
-            cache(followListEvent, shouldPullMissingEvents: shouldPullMissingEvents)
-        } else {
-            cache(followListEvent, shouldPullMissingEvents: shouldPullMissingEvents)
         }
+        cache(followListEvent, shouldPullMissingEvents: shouldPullMissingEvents)
     }
 
     private func cache(_ followListEvent: FollowListEvent, shouldPullMissingEvents: Bool) {
@@ -667,8 +666,10 @@ extension AppState: EventVerifying, RelayDelegate {
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self = self else { return }
             if let existingMetadataEvent = self.metadataEvents[metadataEvent.pubkey] {
-                // Nostr replaceable event deduplication: ignore older or equal events
-                if metadataEvent.createdAt <= existingMetadataEvent.createdAt {
+                // Nostr replaceable event deduplication: ignore older or equal by tie-break
+                if !self.shouldReplaceByCreatedAtThenId(
+                    old: existingMetadataEvent, new: metadataEvent)
+                {
                     return
                 }
                 // Process replacement of newer event
@@ -741,12 +742,27 @@ extension AppState: EventVerifying, RelayDelegate {
             return
         }
 
+        // If this coordinate has been deleted after this event's timestamp, ignore it.
+        if let deletedAt = deletedEventCoordinates[eventCoordinates],
+            liveActivitiesEvent.createdDate <= deletedAt
+        {
+            return
+        }
+
+        // Drop expired events if NIP-40 expiration present and passed.
+        if let expirationStr = liveActivitiesEvent.firstValueForRawTagName("expiration"),
+            let expiration = Int64(expirationStr),
+            expiration <= Int64(Date().timeIntervalSince1970)
+        {
+            return
+        }
+
         // Handle Nostr replaceable event deduplication
         if let existingEvents = liveActivitiesEvents[eventCoordinates] {
             // Find the most recent event for this coordinate
             if let mostRecentEvent = existingEvents.max(by: { $0.createdAt < $1.createdAt }) {
-                // If incoming event is older or equal, ignore it
-                if liveActivitiesEvent.createdAt <= mostRecentEvent.createdAt {
+                // If incoming event is older or equal (tie-break by id), ignore it
+                if !shouldReplaceByCreatedAtThenId(old: mostRecentEvent, new: liveActivitiesEvent) {
                     return
                 }
                 // If incoming event is newer, we'll replace the old one
@@ -796,17 +812,11 @@ extension AppState: EventVerifying, RelayDelegate {
         liveActivitiesEvents[coordinate] = [latestActivity]
     }
 
-    /// Utility method to check if a Nostr event should replace an existing one
-    /// Returns true if newEvent is newer than existingEvent
-    private func shouldReplaceNostrEvent<T: NostrEvent>(_ existingEvent: T?, with newEvent: T)
-        -> Bool
-    {
-        guard let existingEvent = existingEvent else {
-            return true  // No existing event, so new event should be added
-        }
-
-        // In Nostr, newer events (higher createdAt timestamp) replace older ones
-        return newEvent.createdAt > existingEvent.createdAt
+    /// Utility: latest createdAt wins; if equal, lowest id wins (NIP-16 tie-break)
+    private func shouldReplaceByCreatedAtThenId<T: NostrEvent>(old: T, new: T) -> Bool {
+        if new.createdAt > old.createdAt { return true }
+        if new.createdAt < old.createdAt { return false }
+        return new.id.lexicographicallyPrecedes(old.id)
     }
 
     private func didReceiveZapReceiptEvent(_ zapReceipt: LightningZapsReceiptEvent) {
@@ -1028,38 +1038,47 @@ extension AppState: EventVerifying, RelayDelegate {
     }
 
     func didReceive(nostrEvent: NostrEvent, relay: Relay? = nil) -> PersistentNostrEvent? {
-        // Process the event with your existing event-specific handlers.
-        switch nostrEvent {
-        case let followListEvent as FollowListEvent:
-            self.didReceiveFollowListEvent(
-                followListEvent,
-                shouldPullMissingEvents: nostrEvent.pubkey
-                    == appSettings?.activeProfile?.publicKeyHex)
-        case let metadataEvent as MetadataEvent:
-            self.didReceiveMetadataEvent(metadataEvent)
-        case let liveActivitiesEvent as LiveActivitiesEvent:
-            self.didReceiveLiveActivitiesEvent(liveActivitiesEvent)
-        case let liveChatMessageEvent as LiveChatMessageEvent:
-            self.didReceiveLiveChatMessage(liveChatMessageEvent)
-        case let zapReceiptEvent as LightningZapsReceiptEvent:
-            self.didReceiveZapReceiptEvent(zapReceiptEvent)
-        case let deletionEvent as DeletionEvent:
-            self.didReceiveDeletionEvent(deletionEvent)
-        default:
-            break
+        // Ingest into centralized store first. Only proceed if accepted.
+        Task.detached(priority: .userInitiated) { [weak self] in
+            guard let self = self else { return }
+            let accepted = await self.eventStore.ingest(nostrEvent)
+            guard accepted else { return }
+
+            DispatchQueue.main.async {
+                // Event-specific handling
+                switch nostrEvent {
+                case let followListEvent as FollowListEvent:
+                    self.didReceiveFollowListEvent(
+                        followListEvent,
+                        shouldPullMissingEvents: nostrEvent.pubkey
+                            == self.appSettings?.activeProfile?.publicKeyHex)
+                case let metadataEvent as MetadataEvent:
+                    self.didReceiveMetadataEvent(metadataEvent)
+                case let liveActivitiesEvent as LiveActivitiesEvent:
+                    self.didReceiveLiveActivitiesEvent(liveActivitiesEvent)
+                case let liveChatMessageEvent as LiveChatMessageEvent:
+                    self.didReceiveLiveChatMessage(liveChatMessageEvent)
+                case let zapReceiptEvent as LightningZapsReceiptEvent:
+                    self.didReceiveZapReceiptEvent(zapReceiptEvent)
+                case let deletionEvent as DeletionEvent:
+                    self.didReceiveDeletionEvent(deletionEvent)
+                default:
+                    break
+                }
+
+                // Persistence: append relay to existing, or enqueue new event
+                if let existingEvent = self.persistentNostrEvent(nostrEvent.id) {
+                    if let relay, !existingEvent.relays.contains(where: { $0 == relay.url }) {
+                        existingEvent.relays.append(relay.url)
+                    }
+                } else {
+                    self.enqueueEvent(nostrEvent)
+                }
+            }
         }
 
-        // Check if the event already exists in persistent storage.
-        if let existingEvent = self.persistentNostrEvent(nostrEvent.id) {
-            if let relay, !existingEvent.relays.contains(where: { $0 == relay.url }) {
-                existingEvent.relays.append(relay.url)
-            }
-            return existingEvent
-        } else {
-            // Instead of immediately inserting and saving, enqueue the event for batch processing.
-            self.enqueueEvent(nostrEvent)
-            return nil  // The persistent event will be created asynchronously.
-        }
+        // The pipeline is asynchronous; return nil immediately.
+        return nil
     }
 
     /// Enqueues an incoming event for batch processing.
@@ -1084,6 +1103,11 @@ extension AppState: EventVerifying, RelayDelegate {
 
     func loadPersistentNostrEvents(_ persistentNostrEvents: [PersistentNostrEvent]) {
         for persistentNostrEvent in persistentNostrEvents {
+            // Ingest into centralized store to initialize replaceable/parameterized indexes
+            let nostrEvent = persistentNostrEvent.nostrEvent
+            Task.detached { [weak self] in
+                _ = await self?.eventStore.ingest(nostrEvent)
+            }
             switch persistentNostrEvent.nostrEvent {
             case let liveActivitiesEvent as LiveActivitiesEvent:
                 self.didReceiveLiveActivitiesEvent(liveActivitiesEvent)
@@ -1190,8 +1214,10 @@ extension AppState: EventVerifying, RelayDelegate {
             return
         }
 
-        // Ignore new events that are older or equal to an existing one.
-        if let oldEvent, oldEvent.createdAt >= newEvent.createdAt {
+        // Ignore new events that are older or equal by tie-break rule.
+        if let oldEvent,
+            !shouldReplaceByCreatedAtThenId(old: oldEvent, new: newEvent)
+        {
             return
         }
 
@@ -1396,7 +1422,15 @@ extension AppState: EventVerifying, RelayDelegate {
                 if let eventCoordinates = liveActivitiesEvent.replaceableEventCoordinates()?.tag
                     .value
                 {
-                    self.addLiveActivity(liveActivitiesEvent, toEventCoordinate: eventCoordinates)
+                    if let existing = self.liveActivitiesEvents[eventCoordinates]?.first {
+                        if shouldReplaceByCreatedAtThenId(old: existing, new: liveActivitiesEvent) {
+                            self.replaceLiveActivity(
+                                liveActivitiesEvent, forEventCoordinate: eventCoordinates)
+                        }
+                    } else {
+                        self.replaceLiveActivity(
+                            liveActivitiesEvent, forEventCoordinate: eventCoordinates)
+                    }
                 }
             default:
                 break
@@ -1448,5 +1482,5 @@ extension AppState: EventVerifying, RelayDelegate {
 struct CollectionLimits {
     static let maxChatMessagesPerEvent = 500
     static let maxZapReceiptsPerEvent = 200
-    static let maxLiveActivitiesEvents = 200
+    static let maxLiveActivitiesEvents = 1000
 }

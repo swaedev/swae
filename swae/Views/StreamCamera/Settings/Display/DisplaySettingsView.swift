@@ -27,11 +27,11 @@ struct DisplaySettingsView: View {
     var body: some View {
         Form {
             Section {
-                NavigationLink {
-                    QuickButtonsSettingsView(model: model)
-                } label: {
-                    Text("Quick buttons")
-                }
+                // NavigationLink {
+                //     QuickButtonsSettingsView(model: model)
+                // } label: {
+                //     Text("Quick buttons")
+                // }
                 Toggle("Big buttons", isOn: $database.bigButtons)
                 if database.showAllSettings {
                     NavigationLink {
@@ -51,7 +51,8 @@ struct DisplaySettingsView: View {
                         Text("Network interface names")
                     }
                     Toggle("Low bitrate warning", isOn: $database.lowBitrateWarning)
-                    Toggle("Recording confirmations", isOn: $database.startStopRecordingConfirmations)
+                    Toggle(
+                        "Recording confirmations", isOn: $database.startStopRecordingConfirmations)
                 }
             }
             Section {
@@ -75,16 +76,20 @@ struct DisplaySettingsView: View {
             if database.showAllSettings {
                 if !isMac() {
                     Section {
-                        Toggle(isOn: Binding(get: {
-                            database.portrait
-                        }, set: { _ in
-                            model.setDisplayPortrait(portrait: !database.portrait)
-                        })) {
+                        Toggle(
+                            isOn: Binding(
+                                get: {
+                                    database.portrait
+                                },
+                                set: { _ in
+                                    model.setDisplayPortrait(portrait: !database.portrait)
+                                })
+                        ) {
                             Text("Portrait")
                         }
                         HStack {
                             Text("Video position")
-                            Slider(value: $model.portraitVideoOffsetFromTop, in: 0 ... 1) {
+                            Slider(value: $model.portraitVideoOffsetFromTop, in: 0...1) {
                                 Text("")
                             }
                         }
@@ -93,7 +98,8 @@ struct DisplaySettingsView: View {
                         }
                     } footer: {
                         VStack(alignment: .leading) {
-                            Text("Useful when using an external camera and a portrait phone holder.")
+                            Text(
+                                "Useful when using an external camera and a portrait phone holder.")
                             Text("")
                             Text(
                                 "To stream in portrait, enable Settings → Streams → \(model.stream.name) → Portrait."
