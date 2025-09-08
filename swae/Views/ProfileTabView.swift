@@ -160,12 +160,10 @@ struct LiveActivitiesView: View {
 struct ShortsView: View {
     var body: some View {
         VStack(spacing: 16) {
-            Spacer()
             Text("No shorts yet")
                 .font(.headline)
                 .foregroundColor(.secondary)
                 .padding(.top, 8)
-            Spacer()
         }
         .padding(.horizontal, 16)
     }

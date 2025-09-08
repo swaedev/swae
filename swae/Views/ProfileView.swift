@@ -208,6 +208,7 @@ struct ProfileView: View {
         LiveActivitiesView(publicKeyHex: viewModel.publicKeyHex)
             .environmentObject(appState)
             .padding(.horizontal, safeArea().left)
+            .padding(.bottom, navbarHeight)
     }
 
     @ViewBuilder
@@ -223,24 +224,27 @@ struct ProfileView: View {
                     bannerSection
                         .zIndex(1)
 
-                    VStack {
-                        aboutSection
+                    aboutSection
+                        .zIndex(-yOffset > navbarHeight ? 0 : 1)
 
-                        VStack(spacing: 0) {
-                            ProfileHeaderTabs(selectedIndex: $selectedTabIndex)
-                            Divider()
-                                .frame(height: 1)
-                        }
-                        .background(colorScheme == .dark ? Color.black : Color.white)
-
-                        if selectedTabIndex == 0 {
-                            liveActivitiesPage()
-                        } else {
-                            shortsPage()
-                        }
+                    VStack(spacing: 0) {
+                        ProfileHeaderTabs(selectedIndex: $selectedTabIndex)
+                        Divider()
+                            .frame(height: 1)
                     }
-                    .padding(.horizontal, safeArea().left)
+                    .background(colorScheme == .dark ? Color.black : Color.white)
                     .zIndex(-yOffset > navbarHeight ? 0 : 1)
+
+                    TabView(selection: $selectedTabIndex) {
+                        liveActivitiesPage()
+                            .tag(0)
+
+                        shortsPage()
+                            .tag(1)
+                    }
+                    .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                    .frame(height: UIScreen.main.bounds.height)
+                    .animation(.easeInOut(duration: 0.3), value: selectedTabIndex)
                 }
             }
             .ignoresSafeArea()
