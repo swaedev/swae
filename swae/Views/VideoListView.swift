@@ -308,7 +308,7 @@ struct VideoListView: View, MetadataCoding {
                 ZStack(alignment: .topLeading) {
                     GeometryReader { proxy in
                         let size = proxy.size
-                        
+
                         ZStack(alignment: .topLeading) {
                             KFImage.url(item.image)
                                 .placeholder {
@@ -387,9 +387,10 @@ struct VideoListView: View, MetadataCoding {
 
             if !orientationMonitor.isLandscape {
                 HStack(spacing: 12) {
-                    if let publicKeyHex = item.participants.first(where: { $0.role == "host" })?
-                        .pubkey?.hex
-                    {
+                    if let publicKeyHex = item.participants.first(where: {
+                        $0.role?.lowercased() == "host"
+                    })?
+                    .pubkey?.hex {
                         ProfilePicView(
                             pubkey: publicKeyHex, size: 45,
                             profile: appState.metadataEvents[publicKeyHex]?.userMetadata)
