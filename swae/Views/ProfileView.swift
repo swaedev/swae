@@ -20,6 +20,8 @@ struct ProfileView: View {
     @State var action_sheet_presented: Bool = false
     @State var filter_state: FilterState = .liveActivities
     @State var yOffset: CGFloat = 0
+    @State private var selectedTabIndex: Int = 0
+    @State private var showSettings: Bool = false
 
     @Environment(\.dismiss) var dismiss
     @Environment(\.colorScheme) var colorScheme
@@ -51,7 +53,6 @@ struct ProfileView: View {
 
     var bannerSection: some View {
         GeometryReader { proxy -> AnyView in
-
             let minY = proxy.frame(in: .global).minY
 
             DispatchQueue.main.async {
@@ -81,10 +82,24 @@ struct ProfileView: View {
                 .frame(height: minY > 0 ? bannerHeight + minY : nil)
                 .offset(y: minY > 0 ? -minY : -minY < navbarHeight ? 0 : -minY - navbarHeight)
             )
-
         }
         .frame(height: bannerHeight)
         .allowsHitTesting(false)
+    }
+
+    // Static banner used for pager measurement and pinned/collapsible layout
+    var staticBannerSection: some View {
+        ZStack(alignment: .bottom) {
+            BannerImageView(
+                appState: appState, pubkey: viewModel.publicKeyHex,
+                profile: viewModel.profileMetadata
+            )
+            .aspectRatio(contentMode: .fill)
+            .frame(height: bannerHeight)
+            .clipped()
+            Divider()
+        }
+        .frame(height: bannerHeight)
     }
 
     var navbarHeight: CGFloat {
@@ -100,56 +115,32 @@ struct ProfileView: View {
         }
     }
 
-    //    func lnButton(unownedProfile: Profile?, record: ProfileRecord?) -> some View {
-    //        return ProfileZapLinkView(unownedProfileRecord: record, profileModel: self.profile) { reactions_enabled, lud16, lnurl in
-    //            Image(reactions_enabled ? "zap.fill" : "zap")
-    //                .foregroundColor(reactions_enabled ? .orange : Color.primary)
-    //                .profile_button_style(scheme: colorScheme)
-    //                .cornerRadius(24)
-    //        }
-    //    }
-
-    //    var dmButton: some View {
-    //        let dm_model = appState.dms.lookup_or_create(profile.pubkey)
-    //        return NavigationLink(value: Route.DMChat(dms: dm_model)) {
-    //            Image("messages")
-    //                .profile_button_style(scheme: colorScheme)
-    //        }
-    //    }
+    var floatingSettingsButton: some View {
+        Button(action: { showSettings = true }) {
+            Image(systemName: "gearshape.fill")
+                .foregroundColor(.white)
+                .frame(width: 33, height: 33)
+                .background(Color.black.opacity(0.5))
+                .clipShape(Circle())
+                .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 1)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text("Settings"))
+    }
 
     private var followsYouBadge: some View {
         Text("Follows you", comment: "Text to indicate that a user is following your profile.")
             .padding([.leading, .trailing], 6.0)
             .padding([.top, .bottom], 2.0)
             .foregroundColor(.gray)
-            //            .background {
-            //                RoundedRectangle(cornerRadius: 5.0)
-            //                    .foregroundColor(Color(UIColor.systemGray))
-            //            }
             .font(.footnote)
     }
 
     func actionSection() -> some View {
         return Group {
-            //            if let record,
-            //               let profile = record.profile,
-            //               let lnurl = record.lnurl,
-            //               lnurl != ""
-            //            {
-            //                lnButton(unownedProfile: profile, record: record)
-            //            }
-
-            //            dmButton
-
             if viewModel.publicKeyHex != appState.appSettings?.activeProfile?.publicKeyHex {
                 FollowButtonView(profileViewModel: viewModel)
             }
-            //            else if appState.keypair.privkey != nil {
-            //                NavigationLink(value: Route.EditMetadata) {
-            //                    ProfileEditButton(appState: appState)
-            //                }
-            //            }
-
         }
     }
 
@@ -175,6 +166,7 @@ struct ProfileView: View {
                 .padding(.top, -(pfp_size / 2.0))
                 .offset(y: pfpOffset())
                 .scaleEffect(pfpScale())
+                .animation(.easeInOut(duration: 0.1), value: yOffset)
                 .onTapGesture {
                     is_zoomed.toggle()
                 }
@@ -193,16 +185,11 @@ struct ProfileView: View {
 
     var aboutSection: some View {
         VStack(alignment: .leading, spacing: 8.0) {
-
             nameSection(profile: viewModel.profileMetadata)
 
             if let about = viewModel.profileMetadata?.about {
                 AboutView(about: about)
             }
-
-            //            if let url = profile_data?.profile?.website_url {
-            //                WebsiteLink(url: url)
-            //            }
 
             HStack {
                 HStack {
@@ -210,37 +197,52 @@ struct ProfileView: View {
                         "\(Text("\(viewModel.profileFollowList.count.formatted())").font(.subheadline.weight(.medium))) following"
                     )
                 }
-
-                //                if let relays = profile.relays {
-                //                    Text("\(Text(verbatim: relays.keys.count.formatted()).font(.subheadline.weight(.medium))) relays")
-                //                }
             }
         }
         .padding(.horizontal)
     }
 
+    // MARK: - Pages
+    @ViewBuilder
+    private func liveActivitiesPage() -> some View {
+        LiveActivitiesView(publicKeyHex: viewModel.publicKeyHex)
+            .environmentObject(appState)
+            .padding(.horizontal, safeArea().left)
+    }
+
+    @ViewBuilder
+    private func shortsPage() -> some View {
+        ShortsView()
+            .padding(.horizontal, safeArea().left)
+    }
+
     var body: some View {
-        NavigationView {
-            ZStack {
-                ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: 0) {
-                        bannerSection
-                            .zIndex(1)
+        ZStack {
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 0) {
+                    bannerSection
+                        .zIndex(1)
 
-                        VStack {
-                            aboutSection
+                    VStack {
+                        aboutSection
 
-                            VStack(spacing: 0) {
-                                ProfileTabView()
-                                    .environmentObject(appState)
-                            }
+                        VStack(spacing: 0) {
+                            ProfileHeaderTabs(selectedIndex: $selectedTabIndex)
+                            Divider()
+                                .frame(height: 1)
+                        }
+                        .background(colorScheme == .dark ? Color.black : Color.white)
+
+                        if selectedTabIndex == 0 {
+                            liveActivitiesPage()
+                        } else {
+                            shortsPage()
                         }
                     }
                     .padding(.horizontal, safeArea().left)
                     .zIndex(-yOffset > navbarHeight ? 0 : 1)
                 }
             }
-            .padding(.bottom, tabBarHeight)
             .ignoresSafeArea()
             .navigationTitle("")
             .navigationBarBackButtonHidden()
@@ -262,30 +264,29 @@ struct ProfileView: View {
                 }
                 if showFollowBtnInBlurrBanner() {
                     ToolbarItem(placement: .topBarTrailing) {
-                        //                        FollowButtonView(
-                        //                            target: profile.get_follow_target(),
-                        //                            follows_you: profile.follows(pubkey: appState.pubkey),
-                        //                            follow_state: appState.contacts.follow_state(profile.pubkey)
-                        //                        )
-                        //                        .padding(.top, 8)
-                    }
-                } else {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        settingsButton
-                            .padding(.top, 5)
-                            .accentColor(.white)
+                        // reserved for follow button if needed
                     }
                 }
             }
             .toolbarBackground(.hidden)
-        }
-        .onAppear {
-            appState.pullMissingEventsFromPubkeysAndFollows([viewModel.publicKeyHex])
-
-            appState.subscribeToProfile(for: viewModel.publicKeyHex)
-        }
-        .onDisappear {
-            appState.unsubscribeFromProfile(for: viewModel.publicKeyHex)
+            .overlay(alignment: .topTrailing) {
+                floatingSettingsButton
+                    .padding(.top, safeArea().top + 8)
+                    .padding(.trailing, 12)
+                    .zIndex(1000)
+            }
+            .onAppear {
+                appState.pullMissingEventsFromPubkeysAndFollows([viewModel.publicKeyHex])
+                appState.subscribeToProfile(for: viewModel.publicKeyHex)
+            }
+            .onDisappear {
+                appState.unsubscribeFromProfile(for: viewModel.publicKeyHex)
+            }
+            .sheet(isPresented: $showSettings) {
+                NavigationView {
+                    AppSettingsView(appState: appState)
+                }
+            }
         }
     }
 }
