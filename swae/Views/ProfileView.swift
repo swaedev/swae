@@ -21,6 +21,8 @@ struct ProfileView: View {
     @State var filter_state: FilterState = .liveActivities
     @State var yOffset: CGFloat = 0
     @State private var selectedTabIndex: Int = 0
+    @State private var liveActivitiesHeight: CGFloat = UIScreen.main.bounds.height
+    @State private var shortsHeight: CGFloat = UIScreen.main.bounds.height
     @State private var showSettings: Bool = false
 
     @Environment(\.dismiss) var dismiss
@@ -237,13 +239,24 @@ struct ProfileView: View {
 
                     TabView(selection: $selectedTabIndex) {
                         liveActivitiesPage()
+                            .readHeight { h in
+                                liveActivitiesHeight = h
+                            }
                             .tag(0)
 
                         shortsPage()
+                            .readHeight { h in
+                                shortsHeight = h
+                            }
                             .tag(1)
                     }
                     .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-                    .frame(height: UIScreen.main.bounds.height)
+                    .frame(
+                        height: max(
+                            selectedTabIndex == 0 ? liveActivitiesHeight : shortsHeight,
+                            UIScreen.main.bounds.height
+                        )
+                    )
                     .animation(.easeInOut(duration: 0.3), value: selectedTabIndex)
                 }
             }
@@ -323,5 +336,28 @@ enum FilterState: Int {
             //            set to shorts kind
             return false
         }
+    }
+}
+
+// MARK: - Dynamic height measurement helpers
+private struct HeightPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        let next = nextValue()
+        // Use the greater of current and next to avoid transient 0s
+        value = max(value, next)
+    }
+}
+
+extension View {
+    fileprivate func readHeight(_ onChange: @escaping (CGFloat) -> Void) -> some View {
+        self
+            .background(
+                GeometryReader { proxy in
+                    Color.clear
+                        .preference(key: HeightPreferenceKey.self, value: proxy.size.height)
+                }
+            )
+            .onPreferenceChange(HeightPreferenceKey.self, perform: onChange)
     }
 }

@@ -116,18 +116,13 @@ struct LiveActivitiesView: View {
 
                 if events.isEmpty {
                     VStack {
-                        Spacer()
                         Text("No streams found")
-                            .font(.title2)
-                            .foregroundColor(.gray)
-                        Text(timeTabFilter == .upcoming ? "No upcoming streams" : "No past streams")
-                            .font(.caption)
+                            .font(.headline)
                             .foregroundColor(.secondary)
-
+                            .padding(.top, 8)
                         Spacer()
                     }
                 } else {
-                    //                    ScrollView(.vertical, showsIndicators: false) {
                     LazyVStack(spacing: 12) {
                         ForEach(events, id: \.id) { event in
                             ProfileStreamCard(event: event)
@@ -138,17 +133,18 @@ struct LiveActivitiesView: View {
                                     }
                                 }
                         }
+                        Spacer()
                     }
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
-                    //                    }
                 }
             } else {
                 VStack {
-                    Spacer()
+
                     Text("Please sign in to view your streams")
-                        .font(.title2)
-                        .foregroundColor(.gray)
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+                        .padding(.top, 8)
                     Spacer()
                 }
             }
@@ -164,6 +160,7 @@ struct ShortsView: View {
                 .font(.headline)
                 .foregroundColor(.secondary)
                 .padding(.top, 8)
+            Spacer()
         }
         .padding(.horizontal, 16)
     }
