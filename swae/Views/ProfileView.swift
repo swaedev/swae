@@ -211,6 +211,7 @@ struct ProfileView: View {
             .environmentObject(appState)
             .padding(.horizontal, safeArea().left)
             .padding(.bottom, navbarHeight)
+            .padding(.top, 16)
     }
 
     @ViewBuilder
