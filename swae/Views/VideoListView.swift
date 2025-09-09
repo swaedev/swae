@@ -46,18 +46,71 @@ struct VideoListView: View, MetadataCoding {
     @State private var selectedIndex: Int = 1
     @State private var hideTopBar: Bool = false
 
+    // Sectioned feed data
+    struct HorizontalSection: Identifiable, Hashable {
+        let id = UUID()
+        let title: String
+        let events: [LiveActivitiesEvent]
+    }
+    @State private var followedSection: HorizontalSection?
+    @State private var popularSection: HorizontalSection?
+    @State private var internalTagSections: [HorizontalSection] = []
+    @State private var liveHero: [LiveActivitiesEvent] = []
+    @State private var replaySection: HorizontalSection?
+
     var body: some View {
         customTabView()
             .edgesIgnoringSafeArea([.bottom])
             .onAppear {
                 filteredEvents = events(timeTabFilter)
+                rebuildSections()
             }
             .onChange(of: appState.liveActivitiesEvents) { _, newValue in
                 filteredEvents = events(timeTabFilter)
+                rebuildSections()
             }
             .onChange(of: timeTabFilter) { _, newValue in
                 filteredEvents = events(newValue)
+                rebuildSections()
             }
+            .onChange(of: appState.followedPubkeys) { _, _ in
+                rebuildSections()
+            }
+    }
+
+    private func sectionHeader(_ title: String) -> some View {
+        HStack {
+            Text(title)
+                .font(.title3.bold())
+                .foregroundStyle(.primary)
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 14)
+        .padding(.bottom, 8)
+    }
+
+    private func horizontalCarousel(_ events: [LiveActivitiesEvent]) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            LazyHStack(spacing: 4) {
+                ForEach(events, id: \.self) { event in
+                    Button {
+                        appState.playerConfig.selectedLiveActivitiesEvent = event
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            appState.playerConfig.showMiniPlayer = true
+                        }
+                    } label: {
+                        CardView(item: event)
+                            .frame(width: UIScreen.main.bounds.width * 0.90)
+                            .scaleEffect(selectedEvent?.id == event.id && showDetailPage ? 1 : 0.93)
+                    }
+                    .buttonStyle(ScaledButtonStyle())
+                    .opacity(showDetailPage ? (selectedEvent?.id == event.id ? 1 : 0) : 1)
+                }
+            }
+            .padding(.horizontal, 4)
+        }
+        // .frame(height: 300)
     }
 
     /// Computes the total height of our top bar: safe area inset + content height.
@@ -113,8 +166,8 @@ struct VideoListView: View, MetadataCoding {
 
                     VStack {
                         HStack {
-                            TabButton(title: "Following", tag: 0, selectedIndex: $selectedIndex)
-                            TabButton(title: "For You", tag: 1, selectedIndex: $selectedIndex)
+                            TabButton(title: "Shorts", tag: 0, selectedIndex: $selectedIndex)
+                            TabButton(title: "Live", tag: 1, selectedIndex: $selectedIndex)
                         }
                         .padding(.horizontal, 30)
 
@@ -208,7 +261,7 @@ struct VideoListView: View, MetadataCoding {
                 }
             } else {
                 ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: 0) {
+                    LazyVStack(spacing: 0) {
                         EmptyView().id("event-list-view-top")
 
                         Color.clear
@@ -239,57 +292,39 @@ struct VideoListView: View, MetadataCoding {
                                 }
                             )
 
-                        ForEach(filteredEvents.prefix(currentPage * 10), id: \.self) { event in
-                            Button {
-                                //                                withAnimation(
-                                //                                    .interactiveSpring(response: 0.6, dampingFraction: 0.7, blendDuration: 0.7)
-                                //                                ) {
-                                //                                    selectedEvent = event
-                                //                                    showDetailPage = true
-                                //                                    animateView = true
-                                //                                    notify(.display_tabbar(false))
-                                //                                }
-                                //                                withAnimation(
-                                //                                    .interactiveSpring(response: 0.6,
-                                //                                                       dampingFraction: 0.7,
-                                //                                                       blendDuration: 0.7)
-                                //                                    .delay(0.05)
-                                //                                ) {
-                                //                                    animateContent = true
-                                //                                }
-                                appState.playerConfig.selectedLiveActivitiesEvent = event
-                                withAnimation(.easeInOut(duration: 0.3)) {
-                                    appState.playerConfig.showMiniPlayer = true
-                                }
-                            } label: {
-                                CardView(item: event)
-                                    .scaleEffect(
-                                        selectedEvent?.id == event.id && showDetailPage ? 1 : 0.93)
-                            }
-                            .buttonStyle(ScaledButtonStyle())
-                            .opacity(showDetailPage ? (selectedEvent?.id == event.id ? 1 : 0) : 1)
+                        // Live Now - hero carousel (full-bleed cards)
+                        if !liveHero.isEmpty {
+                            sectionHeader("Live Now")
+                            horizontalCarousel(liveHero)
                         }
 
-                        // Loading indicator view
+                        // Followed section
+                        if let section = followedSection, !section.events.isEmpty {
+                            sectionHeader(section.title)
+                            horizontalCarousel(section.events)
+                        }
+
+                        // Popular section
+                        if let section = popularSection, !section.events.isEmpty {
+                            sectionHeader(section.title)
+                            horizontalCarousel(section.events)
+                        }
+
+                        // Internal tag sections
+                        ForEach(internalTagSections, id: \.self) { section in
+                            sectionHeader(section.title)
+                            horizontalCarousel(section.events)
+                        }
+
+                        // Recent Replays section
+                        if let replay = replaySection, !replay.events.isEmpty {
+                            sectionHeader("Recent Replays")
+                            horizontalCarousel(replay.events)
+                        }
+
+                        // Optional loading indicator when sections rebuild
                         if isLoadingMore {
-                            VStack(alignment: .leading) {
-                                Spacer()
-                                LoadingCircleView(showBackground: false)
-                                Spacer()
-                            }
-                            .frame(height: 100)
-                        } else {
-                            GeometryReader { proxy -> Color in
-                                let minY = proxy.frame(in: .named("scroll")).minY
-                                let height = UIScreen.main.bounds.height
-                                if !filteredEvents.isEmpty && minY < height && hasMoreData {
-                                    Task {
-                                        await loadMoreEvents()
-                                    }
-                                }
-                                return Color.clear
-                            }
-                            .frame(height: 0)
+                            VStack { LoadingCircleView(showBackground: false) }.frame(height: 100)
                         }
                     }
                 }
@@ -348,7 +383,7 @@ struct VideoListView: View, MetadataCoding {
                             .padding(8)
                         }
                     }
-                    .frame(height: 250)
+                    .frame(height: 200)
                     .offset(y: selectedEvent?.id == item.id && animateView ? safeArea().top : 0)
                 }
             } else if showDetailPage && (selectedEvent?.id == item.id) && isDetailPage {
@@ -367,7 +402,7 @@ struct VideoListView: View, MetadataCoding {
                         }
                     } else {
                         HStack {}
-                            .frame(height: 250)
+                            .frame(height: 200)
                             .background(Color.clear)
                     }
                 }
@@ -381,7 +416,7 @@ struct VideoListView: View, MetadataCoding {
                         ? [.top, .bottom] : [.leading, .trailing])
             } else {
                 HStack {}
-                    .frame(height: 250)
+                    .frame(height: 200)
                     .background(Color.clear)
             }
 
@@ -413,7 +448,7 @@ struct VideoListView: View, MetadataCoding {
             }
         }
         //        .background(Color(UIColor.systemBackground))
-        //        .frame(maxHeight: 250)
+        //        .frame(maxHeight: 200)
         .matchedGeometryEffect(
             id: item.id, in: animation,
             isSource: selectedEvent?.id == item.id && animateView)
@@ -624,6 +659,85 @@ struct VideoListView: View, MetadataCoding {
     func hide_topbar(_ shouldHide: Bool) {
         withAnimation(.easeInOut(duration: 0.15)) {
             hideTopBar = shouldHide
+        }
+    }
+
+    // MARK: - Section building
+    func rebuildSections() {
+        // Build sections from the complete corpus so Live shows first regardless of time filter
+        let sourceEvents = appState.allUpcomingEvents + appState.allPastEvents
+        guard !sourceEvents.isEmpty else {
+            followedSection = nil
+            popularSection = nil
+            internalTagSections = []
+            liveHero = []
+            replaySection = nil
+            return
+        }
+
+        isLoadingMore = true
+        DispatchQueue.global(qos: .userInitiated).async {
+            // FOLLOWED
+            let followedSet = self.appState.followedPubkeys
+            let isFollowed: (LiveActivitiesEvent) -> Bool = { event in
+                if followedSet.contains(event.pubkey) { return true }
+                let hostHex = event.participants.first(where: { $0.role?.lowercased() == "host" })?
+                    .pubkey?.hex
+                if let hostHex, followedSet.contains(hostHex) { return true }
+                return false
+            }
+            let followed = sourceEvents.filter(isFollowed)
+
+            // Split live vs replays
+            let liveOnly = sourceEvents.filter { $0.isLive }
+            let replaysOnly = sourceEvents.filter { $0.isReplay }
+
+            // POPULAR (exclude followed) among live
+            let followedIds = Set(followed.map { $0.id })
+            let others = liveOnly.filter { !followedIds.contains($0.id) }
+            let popular = others.sorted { lhs, rhs in
+                lhs.currentParticipants > rhs.currentParticipants
+            }
+
+            // TAG SECTIONS (internal:*)
+            var tagMap: [String: [LiveActivitiesEvent]] = [:]
+            for event in liveOnly {
+                for raw in event.internalTags {
+                    let label = raw.replacingOccurrences(of: "internal:", with: "")
+                    tagMap[label, default: []].append(event)
+                }
+            }
+            var tagSections: [HorizontalSection] = tagMap.map { key, value in
+                let sorted = value.sorted { $0.currentParticipants > $1.currentParticipants }
+                return HorizontalSection(title: key.capitalized, events: Array(sorted.prefix(20)))
+            }
+            tagSections.sort { lhs, rhs in
+                (lhs.events.first?.currentParticipants ?? 0)
+                    > (rhs.events.first?.currentParticipants ?? 0)
+            }
+
+            let followedTop = Array(followed.filter { $0.isLive }.prefix(20))
+            let popularTop = Array(popular.prefix(20))
+            let hero = Array(
+                liveOnly.sorted { $0.currentParticipants > $1.currentParticipants }.prefix(5))
+            let recentReplays = Array(
+                replaysOnly.sorted(using: LiveActivitiesEventSortComparator(order: .reverse))
+                    .prefix(20))
+
+            DispatchQueue.main.async {
+                self.liveHero = hero
+                self.followedSection =
+                    followedTop.isEmpty
+                    ? nil : HorizontalSection(title: "Following", events: followedTop)
+                self.popularSection =
+                    popularTop.isEmpty
+                    ? nil : HorizontalSection(title: "Popular", events: popularTop)
+                self.internalTagSections = Array(tagSections.prefix(8))
+                self.replaySection =
+                    recentReplays.isEmpty
+                    ? nil : HorizontalSection(title: "Recent Replays", events: recentReplays)
+                self.isLoadingMore = false
+            }
         }
     }
 }

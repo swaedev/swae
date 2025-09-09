@@ -6,28 +6,65 @@
 //
 
 import Foundation
-import NostrSDK
 
-extension LiveActivitiesEvent {
-    var isUpcoming: Bool {
-        guard let startsAt else {
+#if canImport(NostrSDK)
+    import NostrSDK
+
+    extension LiveActivitiesEvent {
+        var isLive: Bool {
+            if status == .live { return true }
+            if let startsAt {
+                if let endsAt { return startsAt <= Date.now && endsAt >= Date.now }
+                return startsAt <= Date.now
+            }
             return false
         }
 
-        guard let endsAt else {
-            return startsAt >= Date.now
+        var isReplay: Bool {
+            return !isLive && isPast
         }
-        return startsAt >= Date.now || endsAt >= Date.now
-    }
+        var isUpcoming: Bool {
+            guard let startsAt else {
+                return false
+            }
 
-    var isPast: Bool {
-        guard let startsAt else {
-            return false
+            guard let endsAt else {
+                return startsAt >= Date.now
+            }
+            return startsAt >= Date.now || endsAt >= Date.now
         }
 
-        guard let endsAt else {
-            return startsAt < Date.now
+        var isPast: Bool {
+            guard let startsAt else {
+                return false
+            }
+
+            guard let endsAt else {
+                return startsAt < Date.now
+            }
+            return endsAt < Date.now
         }
-        return endsAt < Date.now
+
+        /// Best-effort current participants count per NIP-53. Falls back to participant list size.
+        var currentParticipants: Int {
+            if let raw = firstValueForRawTagName("current_participants"), let value = Int(raw) {
+                return value
+            }
+            // Fallback: derive from participants array if tag missing
+            return participants.count
+        }
+
+        /// Internal category tags (only tags that start with "internal:").
+        /// Note: If the SDK exposes multi-value accessors for tags, prefer them.
+        /// Here we conservatively fallback to a single `t` value.
+        var internalTags: [String] {
+            if let single = firstValueForRawTagName("t"), single.hasPrefix("internal:") {
+                return [single]
+            }
+            return []
+        }
+
+        /// Convenience popularity score used for sorting lists.
+        var popularityScore: Int { currentParticipants }
     }
-}
+#endif
