@@ -92,7 +92,7 @@ struct VideoListView: View, MetadataCoding {
 
     private func horizontalCarousel(_ events: [LiveActivitiesEvent]) -> some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            LazyHStack(spacing: 4) {
+            LazyHStack(spacing: 2) {
                 ForEach(events, id: \.self) { event in
                     Button {
                         appState.playerConfig.selectedLiveActivitiesEvent = event
@@ -108,7 +108,6 @@ struct VideoListView: View, MetadataCoding {
                     .opacity(showDetailPage ? (selectedEvent?.id == event.id ? 1 : 0) : 1)
                 }
             }
-            .padding(.horizontal, 4)
         }
         // .frame(height: 300)
     }
@@ -338,7 +337,7 @@ struct VideoListView: View, MetadataCoding {
 
     @ViewBuilder
     private func CardView(item: LiveActivitiesEvent, isDetailPage: Bool = false) -> some View {
-        VStack(alignment: .leading, spacing: 15) {
+        VStack(alignment: .leading, spacing: 8) {
             if !showDetailPage && !(selectedEvent?.id == item.id) {
                 ZStack(alignment: .topLeading) {
                     GeometryReader { proxy in
@@ -433,7 +432,7 @@ struct VideoListView: View, MetadataCoding {
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text(item.title ?? "Untitled Stream")
-                            .font(.headline)
+                            .font(.system(size: 15, weight: .semibold, design: .default))
                             .lineLimit(2)
                             .multilineTextAlignment(.leading)
 
