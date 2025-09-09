@@ -89,21 +89,6 @@ struct ProfileView: View {
         .allowsHitTesting(false)
     }
 
-    // Static banner used for pager measurement and pinned/collapsible layout
-    var staticBannerSection: some View {
-        ZStack(alignment: .bottom) {
-            BannerImageView(
-                appState: appState, pubkey: viewModel.publicKeyHex,
-                profile: viewModel.profileMetadata
-            )
-            .aspectRatio(contentMode: .fill)
-            .frame(height: bannerHeight)
-            .clipped()
-            Divider()
-        }
-        .frame(height: bannerHeight)
-    }
-
     var navbarHeight: CGFloat {
         return 100.0 - (safeArea().top)
     }
