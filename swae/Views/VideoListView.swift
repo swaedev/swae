@@ -664,7 +664,7 @@ struct VideoListView: View, MetadataCoding {
     // MARK: - Section building
     func rebuildSections() {
         // Build sections from the complete corpus so Live shows first regardless of time filter
-        let sourceEvents = appState.allUpcomingEvents + appState.allPastEvents
+        let sourceEvents = filteredEvents
         guard !sourceEvents.isEmpty else {
             followedSection = nil
             popularSection = nil
@@ -708,20 +708,19 @@ struct VideoListView: View, MetadataCoding {
             }
             var tagSections: [HorizontalSection] = tagMap.map { key, value in
                 let sorted = value.sorted { $0.currentParticipants > $1.currentParticipants }
-                return HorizontalSection(title: key.capitalized, events: Array(sorted.prefix(20)))
+                return HorizontalSection(title: key.capitalized, events: Array(sorted))
             }
             tagSections.sort { lhs, rhs in
                 (lhs.events.first?.currentParticipants ?? 0)
                     > (rhs.events.first?.currentParticipants ?? 0)
             }
 
-            let followedTop = Array(followed.filter { $0.isLive }.prefix(20))
-            let popularTop = Array(popular.prefix(20))
+            let followedTop = Array(followed.filter { $0.isLive })
+            let popularTop = Array(popular)
             let hero = Array(
-                liveOnly.sorted { $0.currentParticipants > $1.currentParticipants }.prefix(5))
+                liveOnly.sorted { $0.currentParticipants > $1.currentParticipants })
             let recentReplays = Array(
-                replaysOnly.sorted(using: LiveActivitiesEventSortComparator(order: .reverse))
-                    .prefix(20))
+                replaysOnly.sorted(using: LiveActivitiesEventSortComparator(order: .reverse)))
 
             DispatchQueue.main.async {
                 self.liveHero = hero
@@ -731,7 +730,7 @@ struct VideoListView: View, MetadataCoding {
                 self.popularSection =
                     popularTop.isEmpty
                     ? nil : HorizontalSection(title: "Popular", events: popularTop)
-                self.internalTagSections = Array(tagSections.prefix(8))
+                self.internalTagSections = Array(tagSections)
                 self.replaySection =
                     recentReplays.isEmpty
                     ? nil : HorizontalSection(title: "Recent Replays", events: recentReplays)

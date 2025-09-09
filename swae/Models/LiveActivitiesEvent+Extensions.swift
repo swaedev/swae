@@ -55,13 +55,8 @@ import Foundation
         }
 
         /// Internal category tags (only tags that start with "internal:").
-        /// Note: If the SDK exposes multi-value accessors for tags, prefer them.
-        /// Here we conservatively fallback to a single `t` value.
         var internalTags: [String] {
-            if let single = firstValueForRawTagName("t"), single.hasPrefix("internal:") {
-                return [single]
-            }
-            return []
+            hashtags.filter { $0.hasPrefix("internal:") }
         }
 
         /// Convenience popularity score used for sorting lists.
