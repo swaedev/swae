@@ -97,7 +97,7 @@ struct VideoListView: View, MetadataCoding {
                     Button {
                         appState.playerConfig.selectedLiveActivitiesEvent = event
                         withAnimation(.easeInOut(duration: 0.3)) {
-                            appState.playerConfig.showMiniPlayer = true
+                            appState.playerConfig.setFullscreenState()
                         }
                     } label: {
                         CardView(item: event)

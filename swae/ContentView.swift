@@ -45,38 +45,31 @@ struct ContentView: View {
                 MainContent()
             }
 
+            // YouTube-like draggable player
             if appState.playerConfig.showMiniPlayer {
-                ZStack {
-                    Rectangle()
-                        .fill(Color(UIColor.systemBackground))
-                        .opacity(1.0 - appState.playerConfig.progress)
-                        .zIndex(1)
-
-                    GeometryReader { geometry in
-                        let size = geometry.size
-
-                        if appState.playerConfig.showMiniPlayer {
-                            PlayerView(size: size, playerConfig: $appState.playerConfig) {
-                                withAnimation(
-                                    .easeInOut(duration: 0.3),
-                                    completionCriteria: .logicallyComplete
-                                ) {
-                                    appState.playerConfig.showMiniPlayer = false
-                                } completion: {
-                                    appState.playerConfig.resetPosition()
-                                    appState.playerConfig.selectedLiveActivitiesEvent = nil
-                                }
-                            }
+                GeometryReader { geometry in
+                    YouTubeDraggablePlayerView(
+                        screenSize: geometry.size,
+                        playerConfig: $appState.playerConfig
+                    ) {
+                        withAnimation(
+                            .easeInOut(duration: 0.3),
+                            completionCriteria: .logicallyComplete
+                        ) {
+                            appState.playerConfig.setHiddenState()
+                        } completion: {
+                            appState.playerConfig.selectedLiveActivitiesEvent = nil
                         }
                     }
-                    .zIndex(2)
                 }
+                .zIndex(1000)  // High z-index to ensure it's above everything
             }
 
             CustomTabBar()
                 .offset(
-                    y: appState.playerConfig.showMiniPlayer || hide_bar || showMainView
-                        ? tabBarHeight - (appState.playerConfig.progress * tabBarHeight) : 0)
+                    y: (appState.playerConfig.playerState == .fullscreen) || hide_bar
+                        || showMainView
+                        ? tabBarHeight : 0)
         }
         .ignoresSafeArea()
         .fullScreenCover(isPresented: $showMainView) {

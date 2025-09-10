@@ -354,22 +354,6 @@ struct VideoPlayerView: View {
     @ViewBuilder
     func PlayBackControls() -> some View {
         HStack(spacing: 25) {
-//            Button {
-//
-//            } label: {
-//                Image(systemName: "backward.end.fill")
-//                    .frame(width: 25, height: 25)
-//                    .fontWeight(.ultraLight)
-//                    .foregroundColor(.white)
-//                    .padding(10)
-//                    .background {
-//                        Circle()
-//                            .fill(.black.opacity(0.35))
-//                    }
-//            }
-//            .disabled(true)
-//            .opacity(0.6)
-
             Button {
                 if !viewModel.isLoading {
                     if viewModel.isFinishedPlaying {
@@ -414,23 +398,6 @@ struct VideoPlayerView: View {
                 .animation(.easeInOut(duration: 0.3), value: viewModel.isLoading)
             }
             .scaleEffect(1.1)
-
-//            Button {
-//
-//            } label: {
-//                Image(systemName: "forward.end.fill")
-//                    .frame(width: 25, height: 25)
-//                    .fontWeight(.ultraLight)
-//                    .foregroundColor(.white)
-//                    .padding(10)
-//                    .background {
-//                        Circle()
-//                            .fill(.black.opacity(0.35))
-//                    }
-//            }
-//            .disabled(true)
-//            .opacity(0.6)
-
         }
         .opacity(viewModel.showPlayerControls && !isDragging ? 1 : 0)
     }

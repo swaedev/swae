@@ -36,7 +36,7 @@ struct LiveActivitiesView: View {
                                 .onTapGesture {
                                     appState.playerConfig.selectedLiveActivitiesEvent = event
                                     withAnimation(.easeInOut(duration: 0.3)) {
-                                        appState.playerConfig.showMiniPlayer = true
+                                        appState.playerConfig.setFullscreenState()
                                     }
                                 }
                         }

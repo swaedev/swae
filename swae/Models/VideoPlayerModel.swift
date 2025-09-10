@@ -6,9 +6,9 @@
 //
 
 import AVKit
+import Combine
 import SwiftUI
 import UIKit
-import Combine
 
 // The model that holds video-related properties and controls
 class VideoPlayerModel: ObservableObject {
@@ -27,8 +27,11 @@ class VideoPlayerModel: ObservableObject {
     @Published var timeoutTask: DispatchWorkItem?
     @Published var isObserverAdded: Bool = false
     @Published var playerStatusObserver: NSKeyValueObservation?
-    
+    @Published var isInMiniPlayerMode: Bool = false
+    @Published var shouldOptimizeForMiniPlayer: Bool = false
+
     private var cancellables = Set<AnyCancellable>()
+    private var timeObserver: Any?
 
     init(url: URL) {
         self.player = AVPlayer(url: url)
@@ -78,8 +81,11 @@ class VideoPlayerModel: ObservableObject {
     func addTimeObserver() {
         guard !isObserverAdded else { return }
 
-        player.addPeriodicTimeObserver(
-            forInterval: CMTime(seconds: 1, preferredTimescale: 600), queue: .main
+        // Use different intervals based on player mode for performance
+        let interval = isInMiniPlayerMode ? 2.0 : 1.0  // Less frequent updates in mini player
+
+        timeObserver = player.addPeriodicTimeObserver(
+            forInterval: CMTime(seconds: interval, preferredTimescale: 600), queue: .main
         ) { time in
             guard let currentPlayerItem = self.player.currentItem else { return }
             let totalDuration = currentPlayerItem.duration.seconds
@@ -98,6 +104,15 @@ class VideoPlayerModel: ObservableObject {
         }
 
         isObserverAdded = true
+    }
+
+    // Remove time observer for cleanup
+    func removeTimeObserver() {
+        if let timeObserver = timeObserver {
+            player.removeTimeObserver(timeObserver)
+            self.timeObserver = nil
+        }
+        isObserverAdded = false
     }
 
     // Seek functionality with thumbnails
@@ -144,7 +159,56 @@ class VideoPlayerModel: ObservableObject {
             self.isFinishedPlaying = true
         }
     }
-    
+
+    // MARK: - Performance Optimization Methods
+
+    func setMiniPlayerMode(_ isMini: Bool) {
+        isInMiniPlayerMode = isMini
+        shouldOptimizeForMiniPlayer = isMini
+
+        if isMini {
+            optimizeForMiniPlayer()
+        } else {
+            optimizeForFullscreen()
+        }
+    }
+
+    private func optimizeForMiniPlayer() {
+        // Reduce quality for better performance
+        if let currentItem = player.currentItem {
+            currentItem.preferredPeakBitRate = 500_000  // 500 kbps
+        }
+
+        // Mute audio by default in mini player
+        player.volume = 0.0
+
+        // Reduce thumbnail generation frequency
+        if thumbnailFrames.count > 50 {
+            thumbnailFrames = Array(thumbnailFrames.prefix(50))
+        }
+    }
+
+    private func optimizeForFullscreen() {
+        // Higher quality for fullscreen
+        if let currentItem = player.currentItem {
+            currentItem.preferredPeakBitRate = 2_000_000  // 2 Mbps
+        }
+
+        // Restore audio
+        player.volume = 1.0
+    }
+
+    // Cleanup method for proper resource management
+    func cleanup() {
+        removeTimeObserver()
+        playerStatusObserver?.invalidate()
+        playerStatusObserver = nil
+        timeoutTask?.cancel()
+        timeoutTask = nil
+        player.pause()
+        cancellables.removeAll()
+    }
+
     private func observeTimeControlStatus() {
         player.publisher(for: \.timeControlStatus)
             .receive(on: DispatchQueue.main)
@@ -153,7 +217,7 @@ class VideoPlayerModel: ObservableObject {
 
                 let loading = (status == .waitingToPlayAtSpecifiedRate)
                 self.isLoading = loading
-                
+
                 withAnimation(.easeInOut(duration: 0.15)) {
                     self.showPlayerControls = loading
                 }
