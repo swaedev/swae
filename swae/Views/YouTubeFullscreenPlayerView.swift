@@ -17,12 +17,19 @@ struct YouTubeFullscreenPlayerView: View {
     var onClose: () -> Void
 
     @State private var videoPlayerModel: VideoPlayerModel?
-    @State private var chatDragOffset: CGFloat = 0
-    @State private var isDraggingChat: Bool = false
-    @State private var videoSize: CGSize = .zero
     @GestureState private var dragTranslation: CGFloat = 0
 
-    // Safe area insets
+    init(
+        screenSize: CGSize,
+        playerConfig: Binding<PlayerConfig>,
+        onClose: @escaping () -> Void
+    ) {
+        self.screenSize = screenSize
+        self._playerConfig = playerConfig
+        self.onClose = onClose
+    }
+
+    // MARK: - Safe area helper
     private var safeAreaInsets: UIEdgeInsets {
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
             let window = windowScene.windows.first
@@ -32,82 +39,97 @@ struct YouTubeFullscreenPlayerView: View {
         return .zero
     }
 
-    // Calculate video frame - YouTube-like behavior
-    private var videoFrame: CGRect {
-        let screenWidth = screenSize.width
-        let screenHeight = screenSize.height
-        let availableHeight = screenHeight - safeAreaInsets.top - safeAreaInsets.bottom
+    // MARK: - Layout constants computed from screen + safe area
+    private var availableHeight: CGFloat {
+        screenSize.height - safeAreaInsets.top
+    }
+    private var collapsedVideoRatio: CGFloat { 0.35 }  // when chat is fully shown, video takes 30%
+    private var expandedVideoRatio: CGFloat { 1.0 }  // when chat hidden, video takes 100%
 
-        if playerConfig.chatRevealProgress > 0 {
-            // When chat is visible: video takes exactly 30% of available height
-            let videoHeight = availableHeight * 0.3
-            let frame = CGRect(
-                x: 0,
-                y: safeAreaInsets.top,
-                width: screenWidth,
-                height: videoHeight
-            )
-            print("Video frame (with chat): \(frame)")
-            return frame
-        } else {
-            // When no chat: video takes full available height
-            let frame = CGRect(
-                x: 0,
-                y: safeAreaInsets.top,
-                width: screenWidth,
-                height: availableHeight
-            )
-            print("Video frame (no chat): \(frame)")
-            return frame
-        }
+    private var videoHeightForProgress: (CGFloat) -> CGFloat = { _ in 0 }  // will be set in computed property below
+
+    // Distance the chat must move from hidden -> shown (top Y coordinate difference)
+    private var chatRevealDistance: CGFloat {
+        // shownY = safeAreaInsets.top + videoHeight
+        // hiddenY = screenHeight
+        let shownY = safeAreaInsets.top + (availableHeight * collapsedVideoRatio)
+        let hiddenY = screenSize.height
+        return hiddenY - shownY
     }
 
-    // Calculate chat frame - YouTube-like behavior with live drag
-    private var chatFrame: CGRect {
-        let screenWidth = screenSize.width
-        let screenHeight = screenSize.height
-        let availableHeight = screenHeight - safeAreaInsets.top
-
-        let videoHeight = availableHeight * 0.3
-        let chatHeight = availableHeight * 0.7
-
-        // Target Y when fully shown
-        let shownY = safeAreaInsets.top + videoHeight
-        // Target Y when fully hidden (off bottom of screen)
-        let hiddenY = screenHeight
-
-        // Interpolate between hidden and shown positions
-        let baseY = hiddenY - (playerConfig.chatRevealProgress * (hiddenY - shownY))
-        // Add live drag offset for continuous dragging
-        let chatY = baseY + dragTranslation
-
-        return CGRect(
-            x: 0,
-            y: chatY,
-            width: screenWidth,
-            height: chatHeight
-        )
+    // MARK: - Derived positions & sizes based on playerConfig.chatRevealProgress & dragTranslation
+    private var progressClamped: CGFloat {
+        max(0, min(1, playerConfig.chatRevealProgress))
     }
 
+    // Effective progress while dragging (incorporates dragTranslation gesture)
+    private func effectiveProgress(forDrag drag: CGFloat) -> CGFloat {
+        // drag is value.translation.height from DragGesture (positive when dragging down)
+        let distance = chatRevealDistance
+        guard distance > 0 else { return progressClamped }
+
+        // When drag is positive (dragging down) the progress decreases.
+        // Compute delta progress = -drag / distance
+        let delta = -drag / distance
+        return max(0, min(1, progressClamped + delta))
+    }
+
+    // videoHeight computed using effectiveProgress while dragging
+    private func videoHeight(usingDrag drag: CGFloat) -> CGFloat {
+        let t = effectiveProgress(forDrag: drag)  // 0 => expanded (full), 1 => collapsed (30%)
+        // interpolate between expandedVideoRatio and collapsedVideoRatio
+        let ratio = expandedVideoRatio + (collapsedVideoRatio - expandedVideoRatio) * t
+        return availableHeight * ratio
+    }
+
+    private func chatOffsetY(usingDrag drag: CGFloat) -> CGFloat {
+        // hiddenY is off bottom (y origin of chat when completely hidden)
+        let shownY = safeAreaInsets.top + videoHeight(usingDrag: drag)
+        let hiddenY = screenSize.height
+
+        let distance = hiddenY - shownY
+        // progress -> how much shown (0 hidden, 1 shown)
+        let t = effectiveProgress(forDrag: drag)
+        // compute top-of-chat Y coordinate
+        let topY = hiddenY - (t * distance)
+        // offset in SwiftUI is relative to the chat's natural position in layout.
+        // We'll position the chat anchored at bottom of screen by placing it at y = shownY + chatHeight/2
+        // Simpler: we'll compute the offset relative to "shown position" (0) and then move to topY.
+        // But easiest approach: compute offset as (topY - shownY)
+        let offsetFromShown = topY - shownY
+        return offsetFromShown
+    }
+
+    private var chatHeight: CGFloat {
+        // chat should take the rest (70%) of availableHeight; keep consistent with video ratio
+        return availableHeight * (1 - collapsedVideoRatio)
+    }
+
+    // MARK: - Body
     var body: some View {
         ZStack {
-            // Background
-            Color.black
-                .ignoresSafeArea()
+            Color.black.ignoresSafeArea()
 
-            // Video Player Section - Always full screen below safe area
-            VideoPlayerSection()
-                .frame(width: videoFrame.width, height: videoFrame.height)
-                .position(x: videoFrame.midX, y: videoFrame.midY)
-                .clipped()
+            // Video player section - use computed height that responds to drag/progress
+            VideoPlayerSection(usingDrag: dragTranslation)
 
-            // LiveChatView Section - Overlay below actual video content
+            // Chat sheet - placed under the video (so it visually appears below the video)
             LiveChatSection()
-                .frame(width: chatFrame.width, height: chatFrame.height)
-                .position(x: chatFrame.midX, y: chatFrame.midY)
-                .clipped()
+                .frame(width: screenSize.width, height: chatHeight)
+                // place the chat at the "shown" Y, then offset by chatOffsetY to reflect dragging/open/closed
+                .position(
+                    x: screenSize.width / 2,
+                    y: (safeAreaInsets.top + videoHeight(usingDrag: dragTranslation)) + chatHeight
+                        / 2
+                )
+                .offset(y: chatOffsetY(usingDrag: dragTranslation))
+                .animation(
+                    .interactiveSpring(response: 0.35, dampingFraction: 0.85, blendDuration: 0.1),
+                    value: playerConfig.chatRevealProgress
+                )
+                .animation(.interactiveSpring(), value: dragTranslation)  // smooth while dragging
 
-            // Controls Overlay
+            // Controls overlay (top/close/minimize/chat toggle)
             ControlsOverlay()
         }
         .onAppear {
@@ -126,82 +148,35 @@ struct YouTubeFullscreenPlayerView: View {
                 playerConfig.updateVideoAspectRatio(from: size)
             }
         }
-        .gesture(
-            DragGesture()
-                .updating($dragTranslation) { value, state, _ in
-                    state = value.translation.height
-                }
-                .onEnded { value in
-                    let threshold =
-                        (screenSize.height
-                            - (safeAreaInsets.top + (screenSize.height - safeAreaInsets.top)
-                                * 0.3))
-                        / 2
-                    if value.translation.height > threshold {
-                        // close
-                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                            playerConfig.chatRevealProgress = 0
-                            playerConfig.playerState = .fullscreen
-                        }
-                    } else {
-                        // open
-                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                            playerConfig.chatRevealProgress = 1
-                            playerConfig.setFullscreenWithChatState()
-                        }
-                    }
-
-                    // Add haptic feedback
-                    let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                    impactFeedback.impactOccurred()
-                }
-        )
+        .gesture(chatDragGesture)
     }
 
+    // MARK: - Subviews as functions
+
     @ViewBuilder
-    private func VideoPlayerSection() -> some View {
+    private func VideoPlayerSection(usingDrag drag: CGFloat) -> some View {
+        let height = videoHeight(usingDrag: drag)
+
         ZStack {
             if let event = playerConfig.selectedLiveActivitiesEvent,
                 let url = event.recording ?? event.streaming
             {
-                // Use the new YouTubeVideoPlayer for proper aspect ratio handling
-                if let videoPlayerModel = videoPlayerModel {
+                if let model = videoPlayerModel {
                     YouTubeVideoPlayer(
-                        player: videoPlayerModel.player,
-                        videoSize: Binding(
-                            get: { videoPlayerModel.detectedVideoSize },
-                            set: { _ in }
-                        ),
-                        actualVideoFrame: Binding(
-                            get: { .zero },
-                            set: { _ in }
-                        )
+                        player: model.player,
+                        videoSize: Binding(get: { model.detectedVideoSize }, set: { _ in }),
+                        actualVideoFrame: Binding(get: { .zero }, set: { _ in })
                     )
                     .onAppear {
-                        print("YouTubeVideoPlayer appeared with URL: \(url)")
-                        videoPlayerModel.setMiniPlayerMode(false)
+                        model.setMiniPlayerMode(false)
                     }
                     .onDisappear {
-                        print("YouTubeVideoPlayer disappeared")
-                        videoPlayerModel.player.pause()
-                    }
-                } else {
-                    // Fallback to original VideoPlayerView if videoPlayerModel is not ready
-                    VideoPlayerView(
-                        size: videoFrame.size,
-                        url: url,
-                        onDragUp: nil,
-                        onSizeChange: nil
-                    )
-                    .onAppear {
-                        print("Fallback VideoPlayerView appeared with URL: \(url)")
-                        setupVideoPlayer()
+                        model.player.pause()
                     }
                 }
             } else {
-                // Placeholder with debug info
                 Rectangle()
-                    .fill(.black)
+                    .fill(Color.black)
                     .overlay {
                         VStack(spacing: 10) {
                             Image(systemName: "play.circle.fill")
@@ -210,48 +185,16 @@ struct YouTubeFullscreenPlayerView: View {
                             Text("No Video Available")
                                 .font(.headline)
                                 .foregroundColor(.white.opacity(0.7))
-
-                            // Debug information
-                            VStack(alignment: .leading, spacing: 5) {
-                                Text("Debug Info:")
-                                    .font(.caption)
-                                    .foregroundColor(.yellow)
-
-                                if let event = playerConfig.selectedLiveActivitiesEvent {
-                                    Text("Event: \(event.title ?? "No title")")
-                                        .font(.caption)
-                                        .foregroundColor(.white.opacity(0.5))
-                                    Text("Recording: \(event.recording?.absoluteString ?? "None")")
-                                        .font(.caption)
-                                        .foregroundColor(.white.opacity(0.5))
-                                    Text("Streaming: \(event.streaming?.absoluteString ?? "None")")
-                                        .font(.caption)
-                                        .foregroundColor(.white.opacity(0.5))
-                                } else {
-                                    Text("No event selected")
-                                        .font(.caption)
-                                        .foregroundColor(.red)
-                                }
-
-                                Text(
-                                    "VideoPlayerModel: \(videoPlayerModel != nil ? "Ready" : "Nil")"
-                                )
-                                .font(.caption)
-                                .foregroundColor(videoPlayerModel != nil ? .green : .red)
-
-                                if let model = videoPlayerModel {
-                                    Text("Video Size: \(model.detectedVideoSize)")
-                                        .font(.caption)
-                                        .foregroundColor(.white.opacity(0.5))
-                                }
-                            }
                         }
                     }
             }
 
-            // Video controls overlay
             VideoControlsOverlay()
         }
+        .frame(width: screenSize.width, height: height)
+        .position(x: screenSize.width / 2, y: safeAreaInsets.top + height / 2)
+        .clipped()
+        .animation(.interactiveSpring(), value: drag)  // dynamic animation while dragging
     }
 
     @ViewBuilder
@@ -260,13 +203,16 @@ struct YouTubeFullscreenPlayerView: View {
             LiveChatView(liveActivitiesEvent: event)
                 .background(.regularMaterial)
                 .cornerRadius(16, corners: [.topLeft, .topRight])
+                .shadow(radius: 8)
+        } else {
+            // Keep an invisible container so layout remains stable even when no event
+            Color.clear
         }
     }
 
     @ViewBuilder
     private func ControlsOverlay() -> some View {
         VStack {
-            // Top controls
             HStack {
                 Button(action: minimizePlayer) {
                     Image(systemName: "chevron.down")
@@ -293,7 +239,6 @@ struct YouTubeFullscreenPlayerView: View {
 
             Spacer()
 
-            // Bottom controls
             HStack {
                 Button(action: toggleChat) {
                     Image(
@@ -315,11 +260,43 @@ struct YouTubeFullscreenPlayerView: View {
 
     @ViewBuilder
     private func VideoControlsOverlay() -> some View {
-        // The VideoPlayerView already has its own controls, so we don't need additional overlay
+        // leave empty or place overlays specific to your player
         EmptyView()
     }
 
-    // MARK: - Gesture Handling
+    // MARK: - Gesture
+
+    private var chatDragGesture: some Gesture {
+        DragGesture()
+            .updating($dragTranslation) { value, state, _ in
+                state = value.translation.height
+            }
+            .onEnded { value in
+                // Use predictedEndTranslation for a more natural snap
+                let predictedEnd = value.predictedEndTranslation.height
+                let effective = effectiveProgress(forDrag: predictedEnd)
+
+                // decide final state based on predicted end or mid-threshold
+                let shouldOpen = effective > 0.5
+
+                let impact = UIImpactFeedbackGenerator(style: .light)
+                impact.prepare()
+
+                withAnimation(
+                    .interactiveSpring(response: 0.35, dampingFraction: 0.85, blendDuration: 0.1)
+                ) {
+                    if shouldOpen {
+                        playerConfig.chatRevealProgress = 1.0
+                        playerConfig.setFullscreenWithChatState()
+                    } else {
+                        playerConfig.chatRevealProgress = 0.0
+                        playerConfig.playerState = .fullscreen
+                    }
+                }
+
+                impact.impactOccurred()
+            }
+    }
 
     // MARK: - Actions
 
@@ -338,37 +315,29 @@ struct YouTubeFullscreenPlayerView: View {
 
         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
             if playerConfig.chatRevealProgress > 0 {
-                playerConfig.chatRevealProgress = 0.0
+                playerConfig.chatRevealProgress = 0
                 playerConfig.playerState = .fullscreen
             } else {
-                playerConfig.chatRevealProgress = 1.0
+                playerConfig.chatRevealProgress = 1
                 playerConfig.setFullscreenWithChatState()
             }
         }
     }
 
-    // MARK: - Video Player Setup
+    // MARK: - Video player setup/cleanup
 
     private func setupVideoPlayer() {
         guard let event = playerConfig.selectedLiveActivitiesEvent,
             let url = event.recording ?? event.streaming
         else {
-            print("No video URL available")
             return
         }
-
-        print("Setting up video player with URL: \(url)")
         cleanupVideoPlayer()
         videoPlayerModel = VideoPlayerModel(url: url)
-
-        // Start playing the video immediately
         videoPlayerModel?.player.play()
-        print("Video player created and started playing")
 
-        // Detect video size when player is ready
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
             videoPlayerModel?.detectVideoSize()
-            print("Video size detection triggered")
         }
     }
 

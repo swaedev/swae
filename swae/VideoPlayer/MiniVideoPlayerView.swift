@@ -92,10 +92,6 @@ struct MiniVideoPlayerView: View {
     }
 
     private func setupMiniPlayerMode() {
-        // Optimize for mini player performance
-        videoModel.player.volume = 0.0  // Mute by default in mini player
-        videoModel.player.rate = videoModel.isPlaying ? 1.0 : 0.0
-
         // Reduce quality for better performance in mini mode
         if let currentItem = videoModel.player.currentItem {
             // Enable automatic quality adjustment for mini player
@@ -104,10 +100,6 @@ struct MiniVideoPlayerView: View {
     }
 
     private func setupFullscreenMode() {
-        // Full quality for fullscreen mode
-        videoModel.player.volume = 1.0
-        videoModel.player.rate = videoModel.isPlaying ? 1.0 : 0.0
-
         if let currentItem = videoModel.player.currentItem {
             // Higher quality for fullscreen
             currentItem.preferredPeakBitRate = 2_000_000  // 2 Mbps for fullscreen

@@ -67,7 +67,8 @@ struct ContentView: View {
 
             CustomTabBar()
                 .offset(
-                    y: (appState.playerConfig.playerState == .fullscreen) || hide_bar
+                    y: (appState.playerConfig.playerState == .fullscreen
+                        || appState.playerConfig.playerState == .fullscreenWithChat) || hide_bar
                         || showMainView
                         ? tabBarHeight : 0)
         }

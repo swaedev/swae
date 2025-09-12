@@ -6,7 +6,6 @@
 //
 
 import AVKit
-import NostrSDK
 import SwiftUI
 
 struct YouTubeDraggablePlayerView: View {
@@ -44,55 +43,49 @@ struct YouTubeDraggablePlayerView: View {
     var body: some View {
         ZStack {
             if playerConfig.playerState != .hidden {
-                // Background overlay for fullscreen mode
-                if playerConfig.playerState == .fullscreen {
-                    Color.black
-                        .opacity(0.8)
-                        .ignoresSafeArea()
+                // Fullscreen player with LiveChatView integration
+                if playerConfig.playerState == .fullscreen
+                    || playerConfig.playerState == .fullscreenWithChat
+                {
+                    YouTubeFullscreenPlayerView(
+                        screenSize: screenSize,
+                        playerConfig: $playerConfig,
+                        onClose: onClose
+                    )
+                    .ignoresSafeArea()
+                } else {
+                    // Minimized player
+                    PlayerContainerView()
+                        .frame(
+                            width: playerConfig.miniPlayerSize.width,
+                            height: playerConfig.miniPlayerSize.height
+                        )
+                        .cornerRadius(playerConfig.cornerRadius)
+                        .shadow(
+                            color: .black.opacity(playerConfig.shadowOpacity),
+                            radius: 8,
+                            x: 0,
+                            y: 4
+                        )
+                        .offset(
+                            x: playerConfig.draggablePosition.x + dragOffset.width,
+                            y: playerConfig.draggablePosition.y + dragOffset.height
+                        )
+                        .scaleEffect(isDragging ? 1.05 : 1.0)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isDragging)
+                        .gesture(
+                            DragGesture()
+                                .onChanged { value in
+                                    handleDragChanged(value)
+                                }
+                                .onEnded { value in
+                                    handleDragEnded(value)
+                                }
+                        )
                         .onTapGesture {
-                            minimizePlayer()
-                        }
-                }
-
-                // Main player view
-                PlayerContainerView()
-                    .frame(
-                        width: playerConfig.playerState == .minimized
-                            ? playerConfig.miniPlayerSize.width : screenSize.width,
-                        height: playerConfig.playerState == .minimized
-                            ? playerConfig.miniPlayerSize.height : screenSize.height
-                    )
-                    .cornerRadius(
-                        playerConfig.playerState == .minimized ? playerConfig.cornerRadius : 0
-                    )
-                    .shadow(
-                        color: .black.opacity(playerConfig.shadowOpacity),
-                        radius: playerConfig.playerState == .minimized ? 8 : 0,
-                        x: 0,
-                        y: playerConfig.playerState == .minimized ? 4 : 0
-                    )
-                    .offset(
-                        x: playerConfig.playerState == .minimized
-                            ? playerConfig.draggablePosition.x + dragOffset.width : 0,
-                        y: playerConfig.playerState == .minimized
-                            ? playerConfig.draggablePosition.y + dragOffset.height : 0
-                    )
-                    .scaleEffect(isDragging ? 1.05 : 1.0)
-                    .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isDragging)
-                    .gesture(
-                        DragGesture()
-                            .onChanged { value in
-                                handleDragChanged(value)
-                            }
-                            .onEnded { value in
-                                handleDragEnded(value)
-                            }
-                    )
-                    .onTapGesture {
-                        if playerConfig.playerState == .minimized {
                             expandPlayer()
                         }
-                    }
+                }
             }
         }
         .onAppear {

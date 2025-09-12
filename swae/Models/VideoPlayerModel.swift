@@ -29,6 +29,7 @@ class VideoPlayerModel: ObservableObject {
     @Published var playerStatusObserver: NSKeyValueObservation?
     @Published var isInMiniPlayerMode: Bool = false
     @Published var shouldOptimizeForMiniPlayer: Bool = false
+    @Published var detectedVideoSize: CGSize = .zero
 
     private var cancellables = Set<AnyCancellable>()
     private var timeObserver: Any?
@@ -179,9 +180,6 @@ class VideoPlayerModel: ObservableObject {
             currentItem.preferredPeakBitRate = 500_000  // 500 kbps
         }
 
-        // Mute audio by default in mini player
-        player.volume = 0.0
-
         // Reduce thumbnail generation frequency
         if thumbnailFrames.count > 50 {
             thumbnailFrames = Array(thumbnailFrames.prefix(50))
@@ -193,9 +191,15 @@ class VideoPlayerModel: ObservableObject {
         if let currentItem = player.currentItem {
             currentItem.preferredPeakBitRate = 2_000_000  // 2 Mbps
         }
+    }
 
-        // Restore audio
-        player.volume = 1.0
+    // Detect video size and aspect ratio
+    func detectVideoSize() {
+        guard let item = player.currentItem else { return }
+        let size = item.presentationSize
+        if size.width > 0 && size.height > 0 {
+            detectedVideoSize = size
+        }
     }
 
     // Cleanup method for proper resource management

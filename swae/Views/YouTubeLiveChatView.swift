@@ -1,8 +1,8 @@
 //
-//  LiveChatView.swift
+//  YouTubeLiveChatView.swift
 //  swae
 //
-//  Created by Suhail Saqan on 2/8/25.
+//  Created by Suhail Saqan on 2/16/25.
 //
 
 import Combine
@@ -10,19 +10,15 @@ import Kingfisher
 import NostrSDK
 import SwiftUI
 
-struct LiveChatView: View {
+struct YouTubeLiveChatView: View {
     @EnvironmentObject var appState: AppState
 
     private let liveActivitiesEvent: LiveActivitiesEvent
 
     private let pageSize: Int = 50
-    private let topHeaderHeight: CGFloat = 50.0
 
     // Create the view model as a StateObject.
     @StateObject private var viewModel: LiveChatViewModel
-
-    // Remove the manual keyboard observer - we'll use SwiftUI's native handling
-    @State private var safeAreaInsets = EdgeInsets()
 
     // Chat state
     @State private var liveChatMessages: [LiveChatMessageEvent] = []
@@ -35,8 +31,6 @@ struct LiveChatView: View {
 
     @State private var scrollOffset: CGFloat = 0
     @State private var lastScrollOffset: CGFloat = 0
-
-    @State private var hideTopBar: Bool = false
 
     @State private var pubkeysToPullMetadata = Set<String>()
     @State private var metadataPullCancellable: AnyCancellable?
@@ -54,46 +48,22 @@ struct LiveChatView: View {
 
     var body: some View {
         GeometryReader { geometry in
-            ZStack(alignment: .bottom) {
-                // Main content
-                VStack(spacing: 0) {
-                    // Top header
-                    topHeader
-                        // TODO: Replace with hiding TopBar when video controls are hidden
-                        // .offset(y: hideTopBar ? -topHeaderHeight * 2 : 0)
-                        .zIndex(1)
+            VStack(spacing: 0) {
+                // Chat messages
+                chatMessagesView
+                    .clipped()
+                    .padding(
+                        .bottom,
+                        60
+                            + (keyboardHeight > 0
+                                ? keyboardHeight : geometry.safeAreaInsets.bottom + 20)
+                    )
+                    .animation(.easeInOut(duration: 0.25), value: keyboardHeight)
 
-                    // Chat messages - adjust bottom padding for input bar
-                    chatMessagesView
-                        .clipped()
-                        .padding(
-                            .bottom,
-                            60
-                                + (keyboardHeight > 0
-                                    ? keyboardHeight : geometry.safeAreaInsets.bottom + 20)
-                        )
-                        .animation(.easeInOut(duration: 0.25), value: keyboardHeight)
-                }
-
-                // Chat input bar with expanded tap area - positioned above keyboard or safe area
-                VStack(spacing: 0) {
-                    // Invisible tappable area above input bar
-                    Color.clear
-                        .frame(height: 20)
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            focusTextField()
-                        }
-
-                    chatInputBar
-                }
-                .offset(
-                    y: keyboardHeight > 0 ? -keyboardHeight : -(geometry.safeAreaInsets.bottom + 20)
-                )
-                .animation(.easeInOut(duration: 0.25), value: keyboardHeight)
+                // Chat input bar
+                chatInputBar
             }
             .onAppear {
-                safeAreaInsets = geometry.safeAreaInsets
                 viewModel.appState = appState
                 subscribeToLiveChat()
                 setupKeyboardObserver()
@@ -111,7 +81,7 @@ struct LiveChatView: View {
                         Color.clear
                             .preference(
                                 key: ScrollOffsetPreferenceKey.self,
-                                value: geo.frame(in: .named("livechat_scroll")).minY
+                                value: geo.frame(in: .named("youtube_chat_scroll")).minY
                             )
                     }
                     .frame(height: 0)
@@ -121,38 +91,33 @@ struct LiveChatView: View {
                     }
 
                     // Spacer to ensure last message is visible above input
-                    // Dynamic spacing based on keyboard state
                     Color.clear
                         .frame(height: 20)
-                        .id("chat_list_bottom")
+                        .id("youtube_chat_bottom")
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
             }
-            // Key change: Use interactively dismiss mode for iMessage-like behavior
             .scrollDismissesKeyboard(.interactively)
             .defaultScrollAnchor(.bottom)
-            .coordinateSpace(name: "livechat_scroll")
+            .coordinateSpace(name: "youtube_chat_scroll")
             .onPreferenceChange(ScrollOffsetPreferenceKey.self) { newOffset in
                 handleScrollOffset(newOffset)
             }
-            // Smoother auto-scroll behavior
             .onChange(of: liveChatMessages) { _, messages in
                 if autoScrollEnabled && !isPaginating && !messages.isEmpty {
-                    // Use a slight delay to ensure layout is complete
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                         withAnimation(.easeOut(duration: 0.3)) {
-                            scrollProxy.scrollTo("chat_list_bottom", anchor: .bottom)
+                            scrollProxy.scrollTo("youtube_chat_bottom", anchor: .bottom)
                         }
                     }
                 }
             }
-            // Re-enable auto-scroll when keyboard appears
             .onChange(of: isKeyboardVisible) { _, visible in
                 if visible && !autoScrollEnabled {
                     autoScrollEnabled = true
                     withAnimation(.easeOut(duration: 0.3)) {
-                        scrollProxy.scrollTo("chat_list_bottom", anchor: .bottom)
+                        scrollProxy.scrollTo("youtube_chat_bottom", anchor: .bottom)
                     }
                 }
             }
@@ -163,21 +128,22 @@ struct LiveChatView: View {
         HStack(alignment: .top, spacing: 12) {
             ProfilePicView(
                 pubkey: message.pubkey,
-                size: 40,
+                size: 32,  // Smaller for YouTube layout
                 profile: appState.metadataEvents[message.pubkey]?.userMetadata
             )
 
             VStack(alignment: .leading, spacing: 4) {
                 ProfileNameView(publicKeyHex: message.pubkey)
-                    .font(.caption)
+                    .font(.caption2)
                     .foregroundColor(.secondary)
 
                 Text(message.content)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
                     .background(Color(.systemGray6))
-                    .cornerRadius(16)
+                    .cornerRadius(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .font(.caption)
             }
         }
         .id(index)
@@ -194,19 +160,16 @@ struct LiveChatView: View {
             let threshold: CGFloat = 15
 
             if delta < -threshold {
-                // Scrolling down: show the top bar, enable auto-scroll
-                hide_top_bar(false)
+                // Scrolling down: enable auto-scroll
                 if !autoScrollEnabled {
-                    // Check if we're near the bottom to re-enable auto-scroll
-                    let isNearBottom = abs(newOffset) < 100  // Adjust threshold as needed
+                    let isNearBottom = abs(newOffset) < 100
                     if isNearBottom {
                         autoScrollEnabled = true
                     }
                 }
             } else if delta > threshold {
-                // Scrolling up: disable auto-scroll, hide top bar
+                // Scrolling up: disable auto-scroll
                 autoScrollEnabled = false
-                hide_top_bar(true)
             }
             lastScrollOffset = newOffset
         }
@@ -223,20 +186,21 @@ struct LiveChatView: View {
                 TextField("Type a message...", text: $viewModel.messageText, axis: .vertical)
                     .textFieldStyle(.plain)
                     .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
+                    .padding(.vertical, 10)
                     .background(Color(.systemGray6))
-                    .cornerRadius(20)
-                    .lineLimit(1...4)
+                    .cornerRadius(18)
+                    .lineLimit(1...3)
                     .focused($isTextFieldFocused)
+                    .font(.caption)
                     .onSubmit {
                         sendMessage()
                     }
 
                 Button(action: sendMessage) {
                     Image(systemName: "paperplane.fill")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.white)
-                        .frame(width: 36, height: 36)
+                        .frame(width: 32, height: 32)
                         .background(
                             Circle()
                                 .fill(
@@ -249,7 +213,7 @@ struct LiveChatView: View {
                     viewModel.messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.vertical, 10)
             .background(.regularMaterial)
         }
         .background(.regularMaterial)
@@ -263,79 +227,6 @@ struct LiveChatView: View {
         if viewModel.saveLiveChatMessageEvent() {
             viewModel.messageText = ""
             autoScrollEnabled = true
-        }
-    }
-
-    private func focusTextField() {
-        isTextFieldFocused = true
-    }
-
-    private var topHeader: some View {
-        HStack(spacing: 12) {
-            if let publicKeyHex = liveActivitiesEvent.participants.first(where: {
-                $0.role?.lowercased() == "host"
-            })?.pubkey?.hex {
-                ProfilePicView(
-                    pubkey: publicKeyHex, size: 45,
-                    profile: appState.metadataEvents[publicKeyHex]?.userMetadata)
-            }
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(liveActivitiesEvent.title ?? "no title")
-                    .font(.body)
-                    .foregroundColor(.primary)
-                    .lineLimit(2)
-
-                HStack(spacing: 4) {
-                    Circle()
-                        .fill(liveActivitiesEvent.status == .ended ? Color.gray : Color.red)
-                        .frame(width: 8, height: 8)
-
-                    Text(liveActivitiesEvent.status == .ended ? "ENDED" : "LIVE")
-                        .font(.caption)
-                        .foregroundColor(liveActivitiesEvent.status == .ended ? .gray : .red)
-                        .fontWeight(.medium)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            zapAmount
-        }
-        .frame(height: topHeaderHeight)
-        .padding(.horizontal, 16)
-        .background(.regularMaterial)
-        .overlay(
-            Rectangle()
-                .fill(Color(.separator))
-                .frame(height: 0.5),
-            alignment: .bottom
-        )
-    }
-
-    private var zapAmount: some View {
-        HStack(spacing: 4) {
-            let coordinates = liveActivitiesEvent.replaceableEventCoordinates()?.tag.value ?? ""
-            let zapAmount = (appState.eventZapTotals[coordinates] ?? 0) / 1000
-
-            Image(systemName: "bolt.fill")
-                .font(.caption)
-                .foregroundColor(.orange)
-
-            Text("\(zapAmount.formatted()) \(pluralize("sat", count: zapAmount))")
-                .font(.caption)
-                .fontWeight(.medium)
-                .foregroundColor(.orange)
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(Color.orange.opacity(0.15))
-        .cornerRadius(8)
-    }
-
-    /// Call this method with `true` to slide the top bar offscreen, or `false` to reveal it.
-    func hide_top_bar(_ shouldHide: Bool) {
-        withAnimation(.easeInOut(duration: 0.25)) {
-            hideTopBar = shouldHide
         }
     }
 
@@ -526,9 +417,3 @@ struct LiveChatView: View {
     }
 }
 
-struct ScrollOffsetPreferenceKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
-    }
-}
