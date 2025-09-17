@@ -7,6 +7,7 @@
 
 import AVKit
 import SwiftUI
+import UIKit
 
 struct YouTubeFullscreenPlayerView: View {
     @EnvironmentObject var orientationMonitor: OrientationMonitor
@@ -16,7 +17,6 @@ struct YouTubeFullscreenPlayerView: View {
     @Binding var playerConfig: PlayerConfig
     var onClose: () -> Void
 
-    @State private var videoPlayerModel: VideoPlayerModel?
     @GestureState private var dragTranslation: CGFloat = 0
 
     init(
@@ -143,7 +143,7 @@ struct YouTubeFullscreenPlayerView: View {
                 cleanupVideoPlayer()
             }
         }
-        .onChange(of: videoPlayerModel?.detectedVideoSize) { _, newSize in
+        .onChange(of: playerConfig.sharedVideoPlayerModel?.detectedVideoSize) { _, newSize in
             if let size = newSize, size.width > 0 && size.height > 0 {
                 playerConfig.updateVideoAspectRatio(from: size)
             }
@@ -153,27 +153,52 @@ struct YouTubeFullscreenPlayerView: View {
 
     // MARK: - Subviews as functions
 
+    private func videoFrame(usingDrag drag: CGFloat) -> CGSize {
+        guard let model = playerConfig.sharedVideoPlayerModel else {
+            return CGSize(width: screenSize.width, height: availableHeight * expandedVideoRatio)
+        }
+
+        let videoSize = model.detectedVideoSize
+        guard videoSize.width > 0 && videoSize.height > 0 else {
+            return CGSize(width: screenSize.width, height: availableHeight * expandedVideoRatio)
+        }
+
+        let containerWidth = screenSize.width
+        let containerHeight = availableHeight
+
+        let videoAspect = videoSize.width / videoSize.height
+        let containerAspect = containerWidth / containerHeight
+
+        if videoAspect > containerAspect {
+            // Video is wider than container → scale height to fill container, crop width
+            let height = containerHeight
+            let width = height * videoAspect
+            return CGSize(width: width, height: height)
+        } else {
+            // Video is taller than container → scale width to fill container, crop height
+            let width = containerWidth
+            let height = width / videoAspect
+            return CGSize(width: width, height: height)
+        }
+    }
+
     @ViewBuilder
     private func VideoPlayerSection(usingDrag drag: CGFloat) -> some View {
         let height = videoHeight(usingDrag: drag)
 
         ZStack {
             if let event = playerConfig.selectedLiveActivitiesEvent,
-                let url = event.recording ?? event.streaming
+                (event.recording ?? event.streaming) != nil
             {
-                if let model = videoPlayerModel {
-                    YouTubeVideoPlayer(
-                        player: model.player,
-                        videoSize: Binding(get: { model.detectedVideoSize }, set: { _ in }),
-                        actualVideoFrame: Binding(get: { .zero }, set: { _ in })
-                    )
-                    .onAppear {
-                        model.setMiniPlayerMode(false)
-                    }
-                    .onDisappear {
-                        model.player.pause()
-                    }
-                }
+                // SimpleVideoPlayer(
+                VideoPlayerView(
+                    videoSize: Binding(
+                        get: { videoFrame(usingDrag: drag) },
+                        set: { _ in }
+                    ),
+                    actualVideoFrame: Binding(get: { .zero }, set: { _ in }),
+                    playerConfig: $playerConfig
+                )
             } else {
                 Rectangle()
                     .fill(Color.black)
@@ -188,8 +213,6 @@ struct YouTubeFullscreenPlayerView: View {
                         }
                     }
             }
-
-            VideoControlsOverlay()
         }
         .frame(width: screenSize.width, height: height)
         .position(x: screenSize.width / 2, y: safeAreaInsets.top + height / 2)
@@ -258,12 +281,6 @@ struct YouTubeFullscreenPlayerView: View {
         }
     }
 
-    @ViewBuilder
-    private func VideoControlsOverlay() -> some View {
-        // leave empty or place overlays specific to your player
-        EmptyView()
-    }
-
     // MARK: - Gesture
 
     private var chatDragGesture: some Gesture {
@@ -327,23 +344,28 @@ struct YouTubeFullscreenPlayerView: View {
     // MARK: - Video player setup/cleanup
 
     private func setupVideoPlayer() {
-        guard let event = playerConfig.selectedLiveActivitiesEvent,
-            let url = event.recording ?? event.streaming
-        else {
+        guard let event = playerConfig.selectedLiveActivitiesEvent else {
             return
         }
-        cleanupVideoPlayer()
-        videoPlayerModel = VideoPlayerModel(url: url)
-        videoPlayerModel?.player.play()
+
+        // Use shared video player model to prevent duplicate audio streams
+        playerConfig.setupSharedVideoPlayer(for: event)
+
+        // Start playing if not already playing
+        if let model = playerConfig.sharedVideoPlayerModel, !model.isPlaying {
+            model.player.play()
+        }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-            videoPlayerModel?.detectVideoSize()
+            playerConfig.sharedVideoPlayerModel?.detectVideoSize()
         }
     }
 
     private func cleanupVideoPlayer() {
-        videoPlayerModel?.cleanup()
-        videoPlayerModel = nil
+        // Only cleanup if we're completely hiding the player
+        if playerConfig.playerState == .hidden {
+            playerConfig.cleanupSharedVideoPlayer()
+        }
     }
 }
 

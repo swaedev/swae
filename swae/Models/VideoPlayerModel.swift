@@ -8,7 +8,6 @@
 import AVKit
 import Combine
 import SwiftUI
-import UIKit
 
 // The model that holds video-related properties and controls
 class VideoPlayerModel: ObservableObject {
@@ -30,13 +29,28 @@ class VideoPlayerModel: ObservableObject {
     @Published var isInMiniPlayerMode: Bool = false
     @Published var shouldOptimizeForMiniPlayer: Bool = false
     @Published var detectedVideoSize: CGSize = .zero
+    @Published var currentTime: TimeInterval = 0
 
     private var cancellables = Set<AnyCancellable>()
     private var timeObserver: Any?
 
     init(url: URL) {
-        self.player = AVPlayer(url: url)
+        // Create AVPlayerItem for better control
+        let playerItem = AVPlayerItem(url: url)
+
+        // Configure player item for optimal video playback
+        playerItem.preferredForwardBufferDuration = 5.0
+        playerItem.canUseNetworkResourcesForLiveStreamingWhilePaused = true
+
+        // Create player with the configured item
+        self.player = AVPlayer(playerItem: playerItem)
+
+        // Configure player for optimal performance
+        player.automaticallyWaitsToMinimizeStalling = true
+        player.allowsExternalPlayback = true
+
         observeTimeControlStatus()
+        observePlayerItemStatus()
     }
 
     // Handle video play/pause
@@ -50,15 +64,11 @@ class VideoPlayerModel: ObservableObject {
 
         if isPlaying {
             player.pause()
-            timeoutControls()
         } else {
             player.play()
-            timeoutControls()
         }
 
-        withAnimation(.easeInOut(duration: 0.15)) {
-            isPlaying.toggle()
-        }
+        timeoutControls()
     }
 
     // Handles timeout for controls visibility
@@ -87,8 +97,9 @@ class VideoPlayerModel: ObservableObject {
 
         timeObserver = player.addPeriodicTimeObserver(
             forInterval: CMTime(seconds: interval, preferredTimescale: 600), queue: .main
-        ) { time in
-            guard let currentPlayerItem = self.player.currentItem else { return }
+        ) { [weak self] time in
+            guard let self = self, let currentPlayerItem = self.player.currentItem else { return }
+
             let totalDuration = currentPlayerItem.duration.seconds
             let currentDuration = self.player.currentTime().seconds
 
@@ -98,13 +109,34 @@ class VideoPlayerModel: ObservableObject {
                 self.lastDraggedProgress = self.progress
             }
 
-            if calculatedProgress == 1 {
+            // Update published currentTime for UI binding
+            self.currentTime = currentDuration
+
+            if calculatedProgress >= 1 {
                 self.isFinishedPlaying = true
                 self.isPlaying = false
             }
         }
 
         isObserverAdded = true
+
+        self.playerStatusObserver = self.player.observe(
+            \.status,
+            options: .new
+        ) { player, _ in
+            if player.status == .readyToPlay {
+                self.generateThumbnailFrames()
+            }
+        }
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(self.videoDidFinishPlaying),
+            name: .AVPlayerItemDidPlayToEndTime,
+            object: self.player.currentItem
+        )
+
+        self.timeoutTask?.cancel()
     }
 
     // Remove time observer for cleanup
@@ -114,6 +146,12 @@ class VideoPlayerModel: ObservableObject {
             self.timeObserver = nil
         }
         isObserverAdded = false
+    }
+
+    func togglePlayWithAnimation(isPlaying: Bool, duration: Double = 0.15) {
+        withAnimation(.easeInOut(duration: duration)) {
+            self.isPlaying.toggle()
+        }
     }
 
     // Seek functionality with thumbnails
@@ -222,6 +260,14 @@ class VideoPlayerModel: ObservableObject {
                 let loading = (status == .waitingToPlayAtSpecifiedRate)
                 self.isLoading = loading
 
+                // Sync isPlaying state with actual player state
+                let actuallyPlaying = (status == .playing)
+                if self.isPlaying != actuallyPlaying {
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        self.isPlaying = actuallyPlaying
+                    }
+                }
+
                 withAnimation(.easeInOut(duration: 0.15)) {
                     self.showPlayerControls = loading
                 }
@@ -231,6 +277,39 @@ class VideoPlayerModel: ObservableObject {
                     print("Playback error: \(error.localizedDescription)")
                     self.playerError = true
                 }
+            }
+            .store(in: &cancellables)
+    }
+
+    private func observePlayerItemStatus() {
+        player.publisher(for: \.currentItem)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] playerItem in
+                guard let self = self, let item = playerItem else { return }
+
+                // Observe player item status changes
+                item.publisher(for: \.status)
+                    .receive(on: DispatchQueue.main)
+                    .sink { status in
+                        switch status {
+                        case .readyToPlay:
+                            self.isLoading = false
+                            self.playerError = false
+                            // Detect video size when ready
+                            self.detectVideoSize()
+                        case .failed:
+                            self.isLoading = false
+                            self.playerError = true
+                            if let error = item.error {
+                                print("Player item error: \(error.localizedDescription)")
+                            }
+                        case .unknown:
+                            self.isLoading = true
+                        @unknown default:
+                            break
+                        }
+                    }
+                    .store(in: &self.cancellables)
             }
             .store(in: &cancellables)
     }

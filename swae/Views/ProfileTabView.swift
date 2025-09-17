@@ -35,6 +35,8 @@ struct LiveActivitiesView: View {
                             ProfileStreamCard(event: event)
                                 .onTapGesture {
                                     appState.playerConfig.selectedLiveActivitiesEvent = event
+                                    // Setup shared video player to prevent duplicate audio streams
+                                    appState.playerConfig.setupSharedVideoPlayer(for: event)
                                     withAnimation(.easeInOut(duration: 0.3)) {
                                         appState.playerConfig.setFullscreenState()
                                     }

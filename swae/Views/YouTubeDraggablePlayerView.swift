@@ -7,6 +7,7 @@
 
 import AVKit
 import SwiftUI
+import UIKit
 
 struct YouTubeDraggablePlayerView: View {
     @EnvironmentObject var orientationMonitor: OrientationMonitor
@@ -18,7 +19,6 @@ struct YouTubeDraggablePlayerView: View {
 
     @State private var dragOffset: CGSize = .zero
     @State private var isDragging: Bool = false
-    @State private var videoPlayerModel: VideoPlayerModel?
 
     // Safe area insets
     private var safeAreaInsets: UIEdgeInsets {
@@ -106,20 +106,18 @@ struct YouTubeDraggablePlayerView: View {
     @ViewBuilder
     private func PlayerContainerView() -> some View {
         ZStack {
-            // Video player
-            if let videoModel = videoPlayerModel {
-                MiniVideoPlayerView(
-                    videoModel: videoModel,
-                    size: playerConfig.playerState == .minimized
-                        ? playerConfig.miniPlayerSize : screenSize,
-                    isMinimized: playerConfig.playerState == .minimized
+            // Video player using the new unified system
+            if let event = playerConfig.selectedLiveActivitiesEvent,
+                let videoURL = event.recording ?? event.streaming
+            {
+                // SimpleVideoPlayer(
+                VideoPlayerView(
+                    videoSize: .constant(
+                        playerConfig.playerState == .minimized
+                            ? playerConfig.miniPlayerSize : screenSize),
+                    actualVideoFrame: .constant(.zero),
+                    playerConfig: $playerConfig
                 )
-                .onAppear {
-                    videoModel.setMiniPlayerMode(playerConfig.playerState == .minimized)
-                }
-                .onChange(of: playerConfig.playerState) { _, newState in
-                    videoModel.setMiniPlayerMode(newState == .minimized)
-                }
             } else {
                 // Placeholder
                 Rectangle()
@@ -352,21 +350,18 @@ struct YouTubeDraggablePlayerView: View {
     // MARK: - Video Player Setup
 
     private func setupVideoPlayer() {
-        guard let event = playerConfig.selectedLiveActivitiesEvent,
-            let url = event.recording ?? event.streaming
-        else {
+        guard let event = playerConfig.selectedLiveActivitiesEvent else {
             return
         }
 
-        // Cleanup existing player
-        cleanupVideoPlayer()
-
-        // Create new player
-        videoPlayerModel = VideoPlayerModel(url: url)
+        // Use shared video player model to prevent duplicate audio streams
+        playerConfig.setupSharedVideoPlayer(for: event)
     }
 
     private func cleanupVideoPlayer() {
-        videoPlayerModel?.cleanup()
-        videoPlayerModel = nil
+        // Only cleanup if we're completely hiding the player
+        if playerConfig.playerState == .hidden {
+            playerConfig.cleanupSharedVideoPlayer()
+        }
     }
 }

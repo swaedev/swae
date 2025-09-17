@@ -5,6 +5,7 @@
 //  Created by Suhail Saqan on 2/16/25.
 //
 
+import AVKit
 import Foundation
 import NostrSDK
 import SwiftUI
@@ -32,12 +33,15 @@ enum VideoAspectRatio: Equatable {
     }
 }
 
-struct PlayerConfig: Equatable {
+struct PlayerConfig {
     var position: CGFloat = .zero
     var lastPosition: CGFloat = .zero
     var progress: CGFloat = .zero
     var selectedLiveActivitiesEvent: LiveActivitiesEvent?
     var showMiniPlayer: Bool = false
+
+    // Shared video player model to prevent duplicate audio streams
+    var sharedVideoPlayerModel: VideoPlayerModel?
 
     // YouTube-like draggable player properties
     var playerState: PlayerState = .hidden
@@ -57,7 +61,7 @@ struct PlayerConfig: Equatable {
     var chatRevealProgress: CGFloat = 0.0  // 0 = hidden, 1 = fully revealed
     var isDraggingChat: Bool = false
     var chatDragOffset: CGFloat = 0.0
-    var showChatByDefault: Bool = false
+    var showChatByDefault: Bool = true
 
     // Video aspect ratio and sizing
     var videoAspectRatio: VideoAspectRatio = .unknown
@@ -103,6 +107,23 @@ struct PlayerConfig: Equatable {
         playerState = .hidden
         showMiniPlayer = false
         resetPosition()
+    }
+
+    // MARK: - Shared Video Player Management
+
+    mutating func setupSharedVideoPlayer(for event: LiveActivitiesEvent) {
+        guard let url = event.recording ?? event.streaming else { return }
+
+        // Cleanup existing player if any
+        cleanupSharedVideoPlayer()
+
+        // Create new shared player
+        sharedVideoPlayerModel = VideoPlayerModel(url: url)
+    }
+
+    mutating func cleanupSharedVideoPlayer() {
+        sharedVideoPlayerModel?.cleanup()
+        sharedVideoPlayerModel = nil
     }
 
     // MARK: - Video Aspect Ratio Helpers
@@ -151,5 +172,30 @@ struct PlayerConfig: Equatable {
                 width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.width / (16.0 / 9.0)
             )
         }
+    }
+}
+
+// MARK: - Equatable Conformance
+
+extension PlayerConfig: Equatable {
+    static func == (lhs: PlayerConfig, rhs: PlayerConfig) -> Bool {
+        // Compare all properties except sharedVideoPlayerModel (which is a reference type)
+        return lhs.position == rhs.position && lhs.lastPosition == rhs.lastPosition
+            && lhs.progress == rhs.progress
+            && lhs.selectedLiveActivitiesEvent == rhs.selectedLiveActivitiesEvent
+            && lhs.showMiniPlayer == rhs.showMiniPlayer && lhs.playerState == rhs.playerState
+            && lhs.draggablePosition == rhs.draggablePosition
+            && lhs.lastDraggablePosition == rhs.lastDraggablePosition
+            && lhs.isDragging == rhs.isDragging && lhs.miniPlayerSize == rhs.miniPlayerSize
+            && lhs.cornerRadius == rhs.cornerRadius && lhs.shadowOpacity == rhs.shadowOpacity
+            && lhs.dragVelocity == rhs.dragVelocity && lhs.snapToEdge == rhs.snapToEdge
+            && lhs.isAnimating == rhs.isAnimating
+            && lhs.chatRevealProgress == rhs.chatRevealProgress
+            && lhs.isDraggingChat == rhs.isDraggingChat && lhs.chatDragOffset == rhs.chatDragOffset
+            && lhs.showChatByDefault == rhs.showChatByDefault
+            && lhs.videoAspectRatio == rhs.videoAspectRatio && lhs.videoSize == rhs.videoSize
+            && lhs.adaptiveVideoSize == rhs.adaptiveVideoSize
+        // Note: sharedVideoPlayerModel is intentionally excluded from equality comparison
+        // as it's a reference type and we only care about the other properties for equality
     }
 }
