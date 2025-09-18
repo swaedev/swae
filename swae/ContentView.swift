@@ -60,6 +60,12 @@ struct ContentView: View {
                         } completion: {
                             appState.playerConfig.selectedLiveActivitiesEvent = nil
                         }
+
+                        // Restore normal orientation behavior when closing
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            AppDelegate.orientationLock = .all
+                            appState.playerConfig.unlockOrientation()
+                        }
                     }
                 }
                 .zIndex(1000)  // High z-index to ensure it's above everything

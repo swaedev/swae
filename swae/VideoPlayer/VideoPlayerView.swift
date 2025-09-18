@@ -65,7 +65,6 @@ struct VideoPlayerView: View {
     private var videoPlayerView: some View {
         CustomVideoPlayer(player: videoPlayerModel.player, videoSize: $videoSize)
             .background(videoSizeReader)
-            .background(Color.blue)
             .overlay(controlsOverlay)
             .overlay(doubleTapSeekOverlay)
             .onTapGesture { handleTapGesture() }

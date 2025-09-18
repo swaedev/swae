@@ -68,6 +68,10 @@ struct PlayerConfig {
     var videoSize: CGSize = .zero
     var adaptiveVideoSize: CGSize = .zero
 
+    // Orientation state tracking
+    var isLandscapeMode: Bool = false
+    var orientationLocked: Bool = false
+
     mutating func resetPosition() {
         position = .zero
         lastPosition = .zero
@@ -173,6 +177,28 @@ struct PlayerConfig {
             )
         }
     }
+
+    // MARK: - Orientation Management
+
+    mutating func toggleOrientation() {
+        isLandscapeMode.toggle()
+        orientationLocked = true
+    }
+
+    mutating func setPortraitMode() {
+        isLandscapeMode = false
+        orientationLocked = true
+    }
+
+    mutating func setLandscapeMode() {
+        isLandscapeMode = true
+        orientationLocked = true
+    }
+
+    mutating func unlockOrientation() {
+        orientationLocked = false
+        isLandscapeMode = false
+    }
 }
 
 // MARK: - Equatable Conformance
@@ -195,6 +221,8 @@ extension PlayerConfig: Equatable {
             && lhs.showChatByDefault == rhs.showChatByDefault
             && lhs.videoAspectRatio == rhs.videoAspectRatio && lhs.videoSize == rhs.videoSize
             && lhs.adaptiveVideoSize == rhs.adaptiveVideoSize
+            && lhs.isLandscapeMode == rhs.isLandscapeMode
+            && lhs.orientationLocked == rhs.orientationLocked
         // Note: sharedVideoPlayerModel is intentionally excluded from equality comparison
         // as it's a reference type and we only care about the other properties for equality
     }

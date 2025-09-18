@@ -12,7 +12,7 @@ class OrientationMonitor: ObservableObject {
     private var manualOverride: Bool = false  // Track if manual rotation is active
 
     init() {
-        detectCurrentOrientation() // Initialize with correct value
+        detectCurrentOrientation()  // Initialize with correct value
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(detectOrientation),
@@ -23,10 +23,17 @@ class OrientationMonitor: ObservableObject {
 
     /// Detects current device orientation using `UIWindowScene`
     private func detectCurrentOrientation() {
-        guard !manualOverride else { return } // Prevent auto-updates when manually set
+        guard !manualOverride else {
+            print("🔒 OrientationMonitor: Manual override active, skipping auto-detection")
+            return
+        }
         if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
             DispatchQueue.main.async {
-                self.isLandscape = scene.interfaceOrientation.isLandscape
+                let newIsLandscape = scene.interfaceOrientation.isLandscape
+                print(
+                    "🔄 OrientationMonitor: Detected orientation change: \(scene.interfaceOrientation.rawValue), isLandscape: \(newIsLandscape)"
+                )
+                self.isLandscape = newIsLandscape
             }
         }
     }
@@ -37,20 +44,32 @@ class OrientationMonitor: ObservableObject {
 
     /// Manually set the orientation and prevent automatic updates
     func setOrientation(to orientation: UIInterfaceOrientationMask) {
-        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else { return }
-
-        manualOverride = true  // Prevent system from overriding
-        let geometryPreferences = UIWindowScene.GeometryPreferences.iOS(interfaceOrientations: orientation)
-
-        windowScene.requestGeometryUpdate(geometryPreferences) { error in
-            print("Failed to update geometry: \(error.localizedDescription)")
-//            if let error = error {
-//                print("Failed to update geometry: \(error.localizedDescription)")
-//            }
+        print("🎯 OrientationMonitor: Setting orientation to \(orientation)")
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
+            print("❌ OrientationMonitor: No window scene found")
+            return
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() /* + 1*/) {  // Allow time for update
-            self.isLandscape = orientation == .landscape
+        manualOverride = true  // Prevent system from overriding
+        let geometryPreferences = UIWindowScene.GeometryPreferences.iOS(
+            interfaceOrientations: orientation)
+
+        windowScene.requestGeometryUpdate(geometryPreferences) { error in
+            if error != nil {
+                print(
+                    "❌ OrientationMonitor: Failed to update geometry: \(error.localizedDescription)"
+                )
+            } else {
+                print("✅ OrientationMonitor: Geometry update successful")
+            }
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {  // Allow time for update
+            // Update the landscape state after orientation change
+            let newIsLandscape =
+                orientation.contains(.landscapeLeft) || orientation.contains(.landscapeRight)
+            print("🔄 OrientationMonitor: Setting isLandscape to \(newIsLandscape)")
+            self.isLandscape = newIsLandscape
             self.manualOverride = false  // Re-enable auto-detection
         }
     }
