@@ -50,9 +50,10 @@ struct YouTubeFullscreenPlayerView: View {
 
     // Distance the chat must move from hidden -> shown (top Y coordinate difference)
     private var chatRevealDistance: CGFloat {
-        // shownY = safeAreaInsets.top + videoHeight
-        // hiddenY = screenHeight
-        let shownY = safeAreaInsets.top + (availableHeight * collapsedVideoRatio)
+        // Use a fixed calculation to avoid circular dependency
+        // Assume video takes 35% of available height when chat is shown
+        let videoHeightWhenChatShown = availableHeight * 0.35
+        let shownY = safeAreaInsets.top + videoHeightWhenChatShown
         let hiddenY = screenSize.height
         return hiddenY - shownY
     }
@@ -71,38 +72,60 @@ struct YouTubeFullscreenPlayerView: View {
         // When drag is positive (dragging down) the progress decreases.
         // Compute delta progress = -drag / distance
         let delta = -drag / distance
-        return max(0, min(1, progressClamped + delta))
+        let newProgress = progressClamped + delta
+
+        // Use a smoother interpolation for more responsive dragging
+        return max(0, min(1, newProgress))
     }
 
     // videoHeight computed using effectiveProgress while dragging
     private func videoHeight(usingDrag drag: CGFloat) -> CGFloat {
-        let t = effectiveProgress(forDrag: drag)  // 0 => expanded (full), 1 => collapsed (30%)
-        // interpolate between expandedVideoRatio and collapsedVideoRatio
-        let ratio = expandedVideoRatio + (collapsedVideoRatio - expandedVideoRatio) * t
-        return availableHeight * ratio
+        // Get the actual video frame size
+        let actualVideoFrame = videoFrame(usingDrag: drag)
+        return actualVideoFrame.height
+    }
+
+    // videoPositionY computed to center video when chat is hidden
+    private func videoPositionY(usingDrag drag: CGFloat) -> CGFloat {
+        let t = effectiveProgress(forDrag: drag)  // 0 => expanded (full), 1 => collapsed (35%)
+        let videoHeight = videoFrame(usingDrag: drag).height  // Get height directly to avoid circular dependency
+
+        if t < 0.1 {  // Chat is hidden - center the video vertically
+            return screenSize.height / 2
+        } else {  // Chat is shown - position at top
+            return safeAreaInsets.top + videoHeight / 2
+        }
+    }
+
+    // chatPositionY computed to position chat under the video
+    private func chatPositionY(usingDrag drag: CGFloat) -> CGFloat {
+        let t = effectiveProgress(forDrag: drag)  // 0 => expanded (full), 1 => collapsed (35%)
+        let videoHeight = videoFrame(usingDrag: drag).height  // Get height directly to avoid circular dependency
+        let dynamicChatHeight = chatHeight(usingDrag: drag)
+
+        if t < 0.1 {  // Chat is hidden - position at bottom
+            return screenSize.height - dynamicChatHeight / 2
+        } else {  // Chat is shown - position under video
+            return safeAreaInsets.top + videoHeight + dynamicChatHeight / 2
+        }
     }
 
     private func chatOffsetY(usingDrag drag: CGFloat) -> CGFloat {
-        // hiddenY is off bottom (y origin of chat when completely hidden)
-        let shownY = safeAreaInsets.top + videoHeight(usingDrag: drag)
-        let hiddenY = screenSize.height
-
-        let distance = hiddenY - shownY
-        // progress -> how much shown (0 hidden, 1 shown)
+        // When chat is hidden, it should be positioned off-screen at the bottom
+        // When chat is shown, it should be positioned under the video
         let t = effectiveProgress(forDrag: drag)
-        // compute top-of-chat Y coordinate
-        let topY = hiddenY - (t * distance)
-        // offset in SwiftUI is relative to the chat's natural position in layout.
-        // We'll position the chat anchored at bottom of screen by placing it at y = shownY + chatHeight/2
-        // Simpler: we'll compute the offset relative to "shown position" (0) and then move to topY.
-        // But easiest approach: compute offset as (topY - shownY)
-        let offsetFromShown = topY - shownY
-        return offsetFromShown
+
+        if t < 0.1 {  // Chat is hidden - position off-screen
+            return screenSize.height  // Move chat completely off-screen
+        } else {  // Chat is shown - no offset needed
+            return 0
+        }
     }
 
-    private var chatHeight: CGFloat {
-        // chat should take the rest (70%) of availableHeight; keep consistent with video ratio
-        return availableHeight * (1 - collapsedVideoRatio)
+    private func chatHeight(usingDrag drag: CGFloat) -> CGFloat {
+        // chat should take the remaining space after the video
+        let actualVideoHeight = videoFrame(usingDrag: drag).height  // Use actual video frame height directly
+        return screenSize.height - safeAreaInsets.top - actualVideoHeight
     }
 
     // MARK: - Body
@@ -113,21 +136,17 @@ struct YouTubeFullscreenPlayerView: View {
             // Video player section - use computed height that responds to drag/progress
             VideoPlayerSection(usingDrag: dragTranslation)
 
-            // Chat sheet - placed under the video (so it visually appears below the video)
+            // Chat sheet - placed directly under the video with no gap
             LiveChatSection()
-                .frame(width: screenSize.width, height: chatHeight)
-                // place the chat at the "shown" Y, then offset by chatOffsetY to reflect dragging/open/closed
+                .frame(width: screenSize.width, height: chatHeight(usingDrag: dragTranslation))
+                // Position chat directly under the video
                 .position(
                     x: screenSize.width / 2,
-                    y: (safeAreaInsets.top + videoHeight(usingDrag: dragTranslation)) + chatHeight
-                        / 2
+                    y: chatPositionY(usingDrag: dragTranslation)
                 )
                 .offset(y: chatOffsetY(usingDrag: dragTranslation))
                 .animation(
-                    .interactiveSpring(response: 0.35, dampingFraction: 0.85, blendDuration: 0.1),
-                    value: playerConfig.chatRevealProgress
-                )
-                .animation(.interactiveSpring(), value: dragTranslation)  // smooth while dragging
+                    .interactiveSpring(response: 0.2, dampingFraction: 0.8), value: dragTranslation)  // smooth while dragging
 
             // Controls overlay (top/close/minimize/chat toggle)
             ControlsOverlay()
@@ -164,44 +183,59 @@ struct YouTubeFullscreenPlayerView: View {
         }
 
         let containerWidth = screenSize.width
-        let containerHeight = availableHeight
+        let t = effectiveProgress(forDrag: drag)  // 0 => expanded (full), 1 => collapsed (35%)
+
+        // Dynamic max height based on chat state
+        let maxHeight: CGFloat
+        if t < 0.1 {  // Chat is hidden - use full available height
+            maxHeight = availableHeight
+        } else {  // Chat is shown - use 35% of available height
+            maxHeight = availableHeight * 0.35
+        }
 
         let videoAspect = videoSize.width / videoSize.height
-        let containerAspect = containerWidth / containerHeight
+        let containerAspect = containerWidth / maxHeight
+
+        // Calculate the optimal size that fits within the constraints
+        let width: CGFloat
+        let height: CGFloat
 
         if videoAspect > containerAspect {
-            // Video is wider than container → scale height to fill container, crop width
-            let height = containerHeight
-            let width = height * videoAspect
-            return CGSize(width: width, height: height)
+            // Video is wider than container → scale to fit width, may be shorter than max height
+            width = containerWidth
+            height = width / videoAspect
         } else {
-            // Video is taller than container → scale width to fill container, crop height
-            let width = containerWidth
-            let height = width / videoAspect
-            return CGSize(width: width, height: height)
+            // Video is taller than container → scale to fit max height, may be narrower than container width
+            height = maxHeight
+            width = height * videoAspect
         }
+
+        return CGSize(width: width, height: height)
     }
 
     @ViewBuilder
     private func VideoPlayerSection(usingDrag drag: CGFloat) -> some View {
-        let height = videoHeight(usingDrag: drag)
+        let actualVideoFrame = videoFrame(usingDrag: drag)
+        let videoHeight = actualVideoFrame.height
+        let videoWidth = actualVideoFrame.width
 
         ZStack {
             if let event = playerConfig.selectedLiveActivitiesEvent,
                 (event.recording ?? event.streaming) != nil
             {
-                // SimpleVideoPlayer(
                 VideoPlayerView(
                     videoSize: Binding(
-                        get: { videoFrame(usingDrag: drag) },
+                        get: { actualVideoFrame },
                         set: { _ in }
                     ),
                     actualVideoFrame: Binding(get: { .zero }, set: { _ in }),
                     playerConfig: $playerConfig
                 )
+                .frame(width: videoWidth, height: videoHeight)
             } else {
                 Rectangle()
                     .fill(Color.black)
+                    .frame(width: videoWidth, height: videoHeight)
                     .overlay {
                         VStack(spacing: 10) {
                             Image(systemName: "play.circle.fill")
@@ -214,10 +248,10 @@ struct YouTubeFullscreenPlayerView: View {
                     }
             }
         }
-        .frame(width: screenSize.width, height: height)
-        .position(x: screenSize.width / 2, y: safeAreaInsets.top + height / 2)
+        .frame(width: screenSize.width, height: videoHeight)
+        .position(x: screenSize.width / 2, y: videoPositionY(usingDrag: drag))
         .clipped()
-        .animation(.interactiveSpring(), value: drag)  // dynamic animation while dragging
+        .animation(.interactiveSpring(response: 0.2, dampingFraction: 0.8), value: drag)  // dynamic animation while dragging
     }
 
     @ViewBuilder
@@ -284,7 +318,7 @@ struct YouTubeFullscreenPlayerView: View {
     // MARK: - Gesture
 
     private var chatDragGesture: some Gesture {
-        DragGesture()
+        DragGesture(minimumDistance: 0)
             .updating($dragTranslation) { value, state, _ in
                 state = value.translation.height
             }
