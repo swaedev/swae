@@ -234,7 +234,6 @@ struct YouTubeFullscreenPlayerView: View {
         if let event = playerConfig.selectedLiveActivitiesEvent {
             LiveChatView(liveActivitiesEvent: event)
                 .background(.regularMaterial)
-                .cornerRadius(16, corners: [.topLeft, .topRight])
                 .shadow(radius: 8)
                 .clipped()
         } else {
