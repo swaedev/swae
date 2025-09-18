@@ -18,6 +18,7 @@ struct YouTubeFullscreenPlayerView: View {
     var onClose: () -> Void
 
     @GestureState private var dragTranslation: CGFloat = 0
+    @State private var interimProgress: CGFloat? = nil  // Tracks effective progress during drag
 
     init(
         screenSize: CGSize,
@@ -41,20 +42,18 @@ struct YouTubeFullscreenPlayerView: View {
 
     // MARK: - Layout constants computed from screen + safe area
     private var availableHeight: CGFloat {
-        screenSize.height - safeAreaInsets.top
+        screenSize.height - safeAreaInsets.top - safeAreaInsets.bottom
     }
-    private var collapsedVideoRatio: CGFloat { 0.35 }  // when chat is fully shown, video takes 30%
-    private var expandedVideoRatio: CGFloat { 1.0 }  // when chat hidden, video takes 100%
+    private var collapsedVideoRatio: CGFloat { 0.35 }
+    private var expandedVideoRatio: CGFloat { 1.0 }
 
-    private var videoHeightForProgress: (CGFloat) -> CGFloat = { _ in 0 }  // will be set in computed property below
+    private var videoHeightForProgress: (CGFloat) -> CGFloat = { _ in 0 }  // Unused, kept for compatibility
 
     // Distance the chat must move from hidden -> shown (top Y coordinate difference)
     private var chatRevealDistance: CGFloat {
-        // Use a fixed calculation to avoid circular dependency
-        // Assume video takes 35% of available height when chat is shown
-        let videoHeightWhenChatShown = availableHeight * 0.35
+        let videoHeightWhenChatShown = availableHeight * collapsedVideoRatio
         let shownY = safeAreaInsets.top + videoHeightWhenChatShown
-        let hiddenY = screenSize.height
+        let hiddenY = screenSize.height + (availableHeight - videoHeightWhenChatShown) / 2
         return hiddenY - shownY
     }
 
@@ -65,67 +64,53 @@ struct YouTubeFullscreenPlayerView: View {
 
     // Effective progress while dragging (incorporates dragTranslation gesture)
     private func effectiveProgress(forDrag drag: CGFloat) -> CGFloat {
-        // drag is value.translation.height from DragGesture (positive when dragging down)
+        let baseProgress = interimProgress ?? progressClamped
         let distance = chatRevealDistance
-        guard distance > 0 else { return progressClamped }
+        guard distance > 0 else { return baseProgress }
 
-        // When drag is positive (dragging down) the progress decreases.
-        // Compute delta progress = -drag / distance
         let delta = -drag / distance
-        let newProgress = progressClamped + delta
-
-        // Use a smoother interpolation for more responsive dragging
+        let newProgress = baseProgress + delta
         return max(0, min(1, newProgress))
     }
 
     // videoHeight computed using effectiveProgress while dragging
     private func videoHeight(usingDrag drag: CGFloat) -> CGFloat {
-        // Get the actual video frame size
         let actualVideoFrame = videoFrame(usingDrag: drag)
         return actualVideoFrame.height
     }
 
-    // videoPositionY computed to center video when chat is hidden
+    // MARK: - Smooth Positions (Adjusted for Initial Hidden State)
     private func videoPositionY(usingDrag drag: CGFloat) -> CGFloat {
-        let t = effectiveProgress(forDrag: drag)  // 0 => expanded (full), 1 => collapsed (35%)
-        let videoHeight = videoFrame(usingDrag: drag).height  // Get height directly to avoid circular dependency
-
-        if t < 0.1 {  // Chat is hidden - center the video vertically
-            return screenSize.height / 2
-        } else {  // Chat is shown - position at top
-            return safeAreaInsets.top + videoHeight / 2
-        }
-    }
-
-    // chatPositionY computed to position chat under the video
-    private func chatPositionY(usingDrag drag: CGFloat) -> CGFloat {
-        let t = effectiveProgress(forDrag: drag)  // 0 => expanded (full), 1 => collapsed (35%)
-        let videoHeight = videoFrame(usingDrag: drag).height  // Get height directly to avoid circular dependency
-        let dynamicChatHeight = chatHeight(usingDrag: drag)
-
-        if t < 0.1 {  // Chat is hidden - position at bottom
-            return screenSize.height - dynamicChatHeight / 2
-        } else {  // Chat is shown - position under video
-            return safeAreaInsets.top + videoHeight + dynamicChatHeight / 2
-        }
-    }
-
-    private func chatOffsetY(usingDrag drag: CGFloat) -> CGFloat {
-        // When chat is hidden, it should be positioned off-screen at the bottom
-        // When chat is shown, it should be positioned under the video
         let t = effectiveProgress(forDrag: drag)
+        let videoHeight = videoFrame(usingDrag: drag).height
 
-        if t < 0.1 {  // Chat is hidden - position off-screen
-            return screenSize.height  // Move chat completely off-screen
-        } else {  // Chat is shown - no offset needed
-            return 0
-        }
+        // Targets: t=0 (expanded, centered within safe area), t=1 (collapsed, top-aligned with safe area)
+        let expandedY = (screenSize.height + safeAreaInsets.top) / 2.0  // Center within safe area
+        let collapsedY = safeAreaInsets.top + videoHeight / 2.0  // Top edge at safe area bottom
+
+        // Linear interpolation
+        return (1 - t) * expandedY + t * collapsedY
+    }
+
+    // chatPositionY computed to position chat under the video or fully off-screen
+    private func chatPositionY(usingDrag drag: CGFloat) -> CGFloat {
+        let t = effectiveProgress(forDrag: drag)
+        let dynamicChatHeight = chatHeight(usingDrag: drag)
+        let videoHeight = videoFrame(usingDrag: drag).height
+
+        // Targets: t=0 (hidden, fully off-screen), t=1 (shown, immediately below video)
+        let expandedY = screenSize.height + dynamicChatHeight  // Fully off-screen bottom (use full height)
+        let collapsedY = safeAreaInsets.top + videoHeight + dynamicChatHeight / 2.0  // Start right below video
+
+        // Linear interpolation
+        return (1 - t) * expandedY + t * collapsedY
     }
 
     private func chatHeight(usingDrag drag: CGFloat) -> CGFloat {
-        // chat should take the remaining space after the video
-        let actualVideoHeight = videoFrame(usingDrag: drag).height  // Use actual video frame height directly
-        return screenSize.height - safeAreaInsets.top - actualVideoHeight
+        let actualVideoHeight = videoFrame(usingDrag: drag).height
+        let remainingHeight = availableHeight - actualVideoHeight
+        // Ensure chat fills remaining space, accounting for bottom safe area
+        return max(0, remainingHeight + safeAreaInsets.bottom)
     }
 
     // MARK: - Body
@@ -139,20 +124,17 @@ struct YouTubeFullscreenPlayerView: View {
             // Chat sheet - placed directly under the video with no gap
             LiveChatSection()
                 .frame(width: screenSize.width, height: chatHeight(usingDrag: dragTranslation))
-                // Position chat directly under the video
                 .position(
                     x: screenSize.width / 2,
                     y: chatPositionY(usingDrag: dragTranslation)
                 )
-                .offset(y: chatOffsetY(usingDrag: dragTranslation))
-                .animation(
-                    .interactiveSpring(response: 0.2, dampingFraction: 0.8), value: dragTranslation)  // smooth while dragging
 
             // Controls overlay (top/close/minimize/chat toggle)
             ControlsOverlay()
         }
         .onAppear {
             playerConfig.initializeDefaults()
+            playerConfig.chatRevealProgress = 0  // Force chat to start hidden
             setupVideoPlayer()
         }
         .onChange(of: playerConfig.selectedLiveActivitiesEvent) { _, newEvent in
@@ -174,39 +156,33 @@ struct YouTubeFullscreenPlayerView: View {
 
     private func videoFrame(usingDrag drag: CGFloat) -> CGSize {
         guard let model = playerConfig.sharedVideoPlayerModel else {
-            return CGSize(width: screenSize.width, height: availableHeight * expandedVideoRatio)
+            return CGSize(width: screenSize.width, height: availableHeight * expandedVideoRatio)  // Default to full height
         }
 
         let videoSize = model.detectedVideoSize
         guard videoSize.width > 0 && videoSize.height > 0 else {
-            return CGSize(width: screenSize.width, height: availableHeight * expandedVideoRatio)
+            return CGSize(width: screenSize.width, height: availableHeight * expandedVideoRatio)  // Default during loading
         }
 
         let containerWidth = screenSize.width
-        let t = effectiveProgress(forDrag: drag)  // 0 => expanded (full), 1 => collapsed (35%)
+        let t = effectiveProgress(forDrag: drag)
 
-        // Dynamic max height based on chat state
-        let maxHeight: CGFloat
-        if t < 0.1 {  // Chat is hidden - use full available height
-            maxHeight = availableHeight
-        } else {  // Chat is shown - use 35% of available height
-            maxHeight = availableHeight * 0.35
-        }
+        // Smooth maxHeight: Ensure full height when t=1, adjusted for aspect ratio
+        let heightFactor = expandedVideoRatio + t * (collapsedVideoRatio - expandedVideoRatio)
+        let maxHeight = availableHeight * heightFactor
+        let targetHeight = (t == 1) ? (availableHeight * collapsedVideoRatio) : maxHeight
 
         let videoAspect = videoSize.width / videoSize.height
-        let containerAspect = containerWidth / maxHeight
+        let containerAspect = containerWidth / targetHeight
 
-        // Calculate the optimal size that fits within the constraints
         let width: CGFloat
         let height: CGFloat
 
         if videoAspect > containerAspect {
-            // Video is wider than container → scale to fit width, may be shorter than max height
             width = containerWidth
-            height = width / videoAspect
+            height = min(width / videoAspect, targetHeight)
         } else {
-            // Video is taller than container → scale to fit max height, may be narrower than container width
-            height = maxHeight
+            height = targetHeight
             width = height * videoAspect
         }
 
@@ -251,7 +227,6 @@ struct YouTubeFullscreenPlayerView: View {
         .frame(width: screenSize.width, height: videoHeight)
         .position(x: screenSize.width / 2, y: videoPositionY(usingDrag: drag))
         .clipped()
-        .animation(.interactiveSpring(response: 0.2, dampingFraction: 0.8), value: drag)  // dynamic animation while dragging
     }
 
     @ViewBuilder
@@ -261,8 +236,8 @@ struct YouTubeFullscreenPlayerView: View {
                 .background(.regularMaterial)
                 .cornerRadius(16, corners: [.topLeft, .topRight])
                 .shadow(radius: 8)
+                .clipped()
         } else {
-            // Keep an invisible container so layout remains stable even when no event
             Color.clear
         }
     }
@@ -316,26 +291,30 @@ struct YouTubeFullscreenPlayerView: View {
     }
 
     // MARK: - Gesture
-
     private var chatDragGesture: some Gesture {
-        DragGesture(minimumDistance: 0)
+        DragGesture(minimumDistance: 10)
             .updating($dragTranslation) { value, state, _ in
                 state = value.translation.height
+                let distance = chatRevealDistance
+                guard distance > 0 else { return }
+                let delta = -value.translation.height / distance
+                interimProgress = max(0, min(1, progressClamped + delta))
             }
             .onEnded { value in
-                // Use predictedEndTranslation for a more natural snap
                 let predictedEnd = value.predictedEndTranslation.height
-                let effective = effectiveProgress(forDrag: predictedEnd)
-
-                // decide final state based on predicted end or mid-threshold
-                let shouldOpen = effective > 0.5
+                let distance = chatRevealDistance
+                guard distance > 0 else { return }
+                let predictedProgress = max(0, min(1, progressClamped - predictedEnd / distance))
+                let shouldOpen = predictedProgress > 0.5
 
                 let impact = UIImpactFeedbackGenerator(style: .light)
                 impact.prepare()
 
-                withAnimation(
-                    .interactiveSpring(response: 0.35, dampingFraction: 0.85, blendDuration: 0.1)
-                ) {
+                // Set chatRevealProgress immediately to the predicted progress
+                playerConfig.chatRevealProgress = predictedProgress
+                interimProgress = predictedProgress
+
+                withAnimation(.spring(response: 0.2, dampingFraction: 0.9)) {
                     if shouldOpen {
                         playerConfig.chatRevealProgress = 1.0
                         playerConfig.setFullscreenWithChatState()
@@ -343,6 +322,7 @@ struct YouTubeFullscreenPlayerView: View {
                         playerConfig.chatRevealProgress = 0.0
                         playerConfig.playerState = .fullscreen
                     }
+                    interimProgress = nil
                 }
 
                 impact.impactOccurred()
@@ -350,7 +330,6 @@ struct YouTubeFullscreenPlayerView: View {
     }
 
     // MARK: - Actions
-
     private func minimizePlayer() {
         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
         impactFeedback.impactOccurred()
@@ -376,16 +355,13 @@ struct YouTubeFullscreenPlayerView: View {
     }
 
     // MARK: - Video player setup/cleanup
-
     private func setupVideoPlayer() {
         guard let event = playerConfig.selectedLiveActivitiesEvent else {
             return
         }
 
-        // Use shared video player model to prevent duplicate audio streams
         playerConfig.setupSharedVideoPlayer(for: event)
 
-        // Start playing if not already playing
         if let model = playerConfig.sharedVideoPlayerModel, !model.isPlaying {
             model.player.play()
         }
@@ -396,7 +372,6 @@ struct YouTubeFullscreenPlayerView: View {
     }
 
     private func cleanupVideoPlayer() {
-        // Only cleanup if we're completely hiding the player
         if playerConfig.playerState == .hidden {
             playerConfig.cleanupSharedVideoPlayer()
         }
@@ -404,7 +379,6 @@ struct YouTubeFullscreenPlayerView: View {
 }
 
 // MARK: - Corner Radius Extension
-
 extension View {
     func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
         clipShape(RoundedCorner(radius: radius, corners: corners))
